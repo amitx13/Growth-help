@@ -1,0 +1,259 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum PaymentType {
+  ACTIVATION
+  UPGRADE
+  SPONSOR_PAYMENT
+}
+
+enum PaymentStatus {
+  PENDING
+  APPROVED
+  UNDER_REVIEW
+  REJECTED
+}
+
+enum PositionType {
+  ORIGINAL
+  REENTRY
+}
+
+model User {
+  // Personal Details
+  id            String      @id
+  name          String
+  email         String
+  password      String
+  mobile        String
+  activationPin String
+  role          Role        @default(USER)
+  bankDetails   BankDetail?
+
+  sponsorId       String? // Original sponsor (never changes)
+  sponsor         User?   @relation("directReferral", fields: [sponsorId], references: [id], onDelete: SetNull)
+  directReferrals User[]  @relation("directReferral")
+
+  positions Position[] @relation("userPositions") // Positions owned by this user
+
+  ownedPins Pin[] @relation("ownedPins")
+  usedPins  Pin[] @relation("usedPins")
+
+  sentPinRequests     PinRequest[] @relation("pinReqFrom")
+  receivedPinRequests PinRequest[] @relation("pinReqTo")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([sponsorId])
+  @@map("users")
+}
+
+model BankDetail {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  bankName      String
+  accountNumber String
+  ifscCode      String
+  upiId         String?
+  qrCode        String?
+  gPay          String?
+  createdAt     DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("bank_details")
+}
+
+model Position {
+  id           String       @id @default(cuid())
+  userId       String
+  positionType PositionType
+
+  // ✅ Store which POSITION (not USER) placed this
+  placedUnderPositionId String?
+
+  currentLevel Int     @default(0)
+  isActive     Boolean @default(false)
+  isBlocked    Boolean @default(false)
+
+  // Each position tracks its own referrals
+  directReferralCount Int @default(0)
+
+  // Relations
+  user User @relation("userPositions", fields: [userId], references: [id], onDelete: Cascade)
+
+  // Self-referencing tree structure
+  placedUnderPosition Position?  @relation("positionTree", fields: [placedUnderPositionId], references: [id], onDelete: SetNull)
+  downlinePositions   Position[] @relation("positionTree")
+
+  userLevels       UserLevel[]
+  sentPayments     Payment[]     @relation("senderPosition")
+  receivedPayments Payment[]     @relation("receiverPosition")
+  pendingLinks     PendingLink[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([placedUnderPositionId])
+  @@index([currentLevel])
+  @@index([isBlocked])
+  @@map("positions")
+}
+
+model UserLevel {
+  id               String  @id @default(cuid())
+  positionId       String
+  levelNumber      Int
+  paymentsReceived Int     @default(0)
+  amountEarned     Int     @default(0)
+  isActive         Boolean @default(false)
+  paymentCapacity  Int
+
+  // Track if sponsor payment is done (blocks upgrade)
+  sponsorPaid Boolean @default(false)
+
+  position Position @relation(fields: [positionId], references: [id], onDelete: Cascade)
+
+  @@unique([positionId, levelNumber])
+  @@index([positionId])
+  @@index([levelNumber])
+  @@map("user_levels")
+}
+
+model Payment {
+  id String @id @default(cuid())
+
+  senderPositionId   String // Which position sent payment
+  receiverPositionId String // Which position received payment
+
+  amount      Int
+  paymentType PaymentType
+  status      PaymentStatus @default(PENDING)
+
+  upgradeToLevel Int? // If upgrade payment, which level when i am upgrading my acc to certain level
+  paymentToLevel Int? // Payment for which level income, When i am receiving level income from downline
+
+  screenshotUrl       String?
+  requestVerification Boolean @default(false)
+  confirmed           Boolean @default(false)
+
+  senderPosition   Position @relation("senderPosition", fields: [senderPositionId], references: [id], onDelete: Cascade)
+  receiverPosition Position @relation("receiverPosition", fields: [receiverPositionId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([senderPositionId])
+  @@index([receiverPositionId])
+  @@index([status])
+  @@index([paymentType])
+  @@map("payments")
+}
+
+enum LinkType {
+  SPONSOR_PAYMENT
+  REENTRY
+  UPGRADE
+}
+
+model PendingLink {
+  id         String   @id @default(cuid())
+  positionId String
+  linkType   LinkType
+
+  // For sponsor/upgrade payments
+  amount      Int?
+  targetLevel Int? // For upgrade links
+
+  // For reentry
+  reentryCount Int? // How many reentries to create
+
+  isCompleted Boolean @default(false)
+
+  position Position @relation(fields: [positionId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([positionId])
+  @@index([linkType])
+  @@index([isCompleted])
+  @@map("pending_links")
+}
+
+model LevelConfig {
+  id    String @id @default(cuid())
+  level Int    @unique
+
+  // Upgrade costs
+  upgradeAmount Int // Cost to upgrade TO this level (pay to N-upline)
+  sponsorAmount Int // Sponsor payment after 1st payment of this level
+
+  paymentCapacity  Int // How many payments can receive at this level
+  reentryCount     Int // How many reentries after 1st payment
+  upgradeAtPayment Int? // At which payment# does upgrade link appear (null for Level 1)
+
+  @@map("level_configs")
+}
+
+model Pin {
+  id      String  @id @default(cuid())
+  pinCode String  @unique
+  status  Boolean @default(true)
+
+  currentOwner String
+  usedBy       String?
+
+  owner    User  @relation("ownedPins", fields: [currentOwner], references: [id], onDelete: Cascade)
+  consumer User? @relation("usedPins", fields: [usedBy], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+
+  @@index([status])
+  @@index([currentOwner])
+  @@map("pins")
+}
+
+enum PinRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model PinRequest {
+  id            String           @id @default(cuid())
+  fromUserId    String
+  toUserId      String
+  count         Int
+  screenshotUrl String?
+  confirmed     Boolean          @default(false)
+  status        PinRequestStatus @default(PENDING)
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  fromUser User @relation("pinReqFrom", fields: [fromUserId], references: [id], onDelete: Cascade)
+  toUser   User @relation("pinReqTo", fields: [toUserId], references: [id], onDelete: Cascade)
+
+  @@index([fromUserId])
+  @@index([toUserId])
+  @@index([status])
+  @@map("pin_requests")
+}
