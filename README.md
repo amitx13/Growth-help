@@ -1,14 +1,7 @@
-Absolutely — here’s the **complete README in one single file**.
-Just copy-paste the entire text into your `README.md`.
-
----
-
 ````markdown
 # Growth Help
 
 Growth Help is a peer-to-peer crowdfunding platform that enables verified users to support each other financially through transparent transactions. The system includes a user-facing app, an admin dashboard, and a backend API.
-
----
 
 ## 🧩 Project Structure
 
@@ -17,8 +10,6 @@ This is a **Turborepo** project with multiple apps:
 - `api` → Backend API (Node.js + Express)
 - `admin` → Admin Dashboard (React / Vite)
 - `web` → User Web App (React / Vite)
-
----
 
 ## 🚀 Prerequisites
 
@@ -30,16 +21,12 @@ You must have:
 - **Node.js (v18+)**
 - **npm**
 
----
-
 ## 🐳 Step 1 — Start PostgreSQL (Docker)
 
 ```bash
 docker pull postgres
 docker run --name growthhelp-db -e POSTGRES_USER=mlm_user -e POSTGRES_PASSWORD=mlm_password -e POSTGRES_DB=mlm_db -p 5432:5432 -d postgres
 ````
-
----
 
 ## 🔧 Step 2 — Setup Environment Variables
 
@@ -54,8 +41,6 @@ DATABASE_URL="postgresql://username:yourPassowrd@localhost:5432/mlm_db?schema=pu
 JWT_SECRET="your_jwt_secret_key"
 ```
 
----
-
 ### ✅ Admin App
 
 Create a `.env` file inside the `admin/` folder:
@@ -66,8 +51,6 @@ VITE_BASE_URL="http://192.168.31.185:3000"
 ```
 
 > Replace `192.168.31.185` with your local IP or use `localhost`.
-
----
 
 ### ✅ Web App
 
@@ -86,8 +69,6 @@ Run from the root of the project:
 ```bash
 npm install
 ```
-
----
 
 ## 🏁 Step 4 — Run the Project
 
