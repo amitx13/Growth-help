@@ -1,5 +1,4 @@
-````markdown
-# Growth Help
+## Growth Help
 
 Growth Help is a peer-to-peer crowdfunding platform that enables verified users to support each other financially through transparent transactions. The system includes a user-facing app, an admin dashboard, and a backend API.
 
@@ -23,10 +22,10 @@ You must have:
 
 ## 🐳 Step 1 — Start PostgreSQL (Docker)
 
-```bash
+```
 docker pull postgres
 docker run --name growthhelp-db -e POSTGRES_USER=mlm_user -e POSTGRES_PASSWORD=mlm_password -e POSTGRES_DB=mlm_db -p 5432:5432 -d postgres
-````
+```
 
 ## 🔧 Step 2 — Setup Environment Variables
 
@@ -34,7 +33,7 @@ docker run --name growthhelp-db -e POSTGRES_USER=mlm_user -e POSTGRES_PASSWORD=m
 
 Create a `.env` file inside the `api/` folder:
 
-```
+```bash
 PORT=3000
 NODE_ENV=development
 DATABASE_URL="postgresql://username:yourPassowrd@localhost:5432/mlm_db?schema=public"
@@ -45,7 +44,7 @@ JWT_SECRET="your_jwt_secret_key"
 
 Create a `.env` file inside the `admin/` folder:
 
-```
+```bash
 VITE_USER_APP_URL='http://192.168.31.185:5173'
 VITE_BASE_URL="http://192.168.31.185:3000"
 ```
@@ -56,7 +55,7 @@ VITE_BASE_URL="http://192.168.31.185:3000"
 
 Create a `.env` file inside the `web/` folder:
 
-```
+```bash
 VITE_BASE_URL="http://192.168.31.185:3000"
 ```
 
