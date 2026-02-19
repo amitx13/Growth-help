@@ -1,7 +1,6 @@
 import { SignupForm } from "@repo/ui";
 import { useSearchParams } from "react-router-dom";
-import { ZodError } from "zod";
-import { CreateUserSchema, type AddNewUser, type ApiSuccessResponse, type InputUserForm } from "@repo/types";
+import { type AddNewUser, type ApiSuccessResponse, type InputUserForm } from "@repo/types";
 import { toast } from "sonner"
 import api from "../lib/axios";
 import { useEffect, useState } from "react";
@@ -25,9 +24,66 @@ export const AddUserPage = () => {
     const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
 
     const handleAddNewUser = async (formData: InputUserForm) => {
+
+        if (!formData.name || formData.name.trim().length < 2) {
+            toast.error(
+                <div className="text-destructive">
+                    Name must be at least 2 characters
+                </div>
+            );
+            return;
+        }
+
+        if (!formData.mobile || formData.mobile.trim().length < 10) {
+            toast.error(
+                <div className="text-destructive">
+                    Mobile number must be at least 10 digits
+                </div>
+            );
+            return;
+        }
+
+        if (
+            !formData.email ||
+            !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)
+        ) {
+            toast.error(
+                <div className="text-destructive">
+                    Invalid email address
+                </div>
+            );
+            return;
+        }
+
+        if (!formData.password || formData.password.length < 8) {
+            toast.error(
+                <div className="text-destructive">
+                    Password must be at least 8 characters
+                </div>
+            );
+            return;
+        }
+
+        if (!formData.sponsorPositionId) {
+            toast.error(
+                <div className="text-destructive">
+                    Sponsor Position ID is required
+                </div>
+            );
+            return;
+        }
+
+        if (!formData.activationPin) {
+            toast.error(
+                <div className="text-destructive">
+                    Activation pin is required
+                </div>
+            );
+            return;
+        }
+
         try {
-            const validatedData = CreateUserSchema.parse(formData)
-            const response: ApiSuccessResponse = await api.post("/add-new-user", validatedData)
+            const response: ApiSuccessResponse = await api.post("/add-new-user", formData)
             if (response.data.success) {
                 toast.success(
                     <div className="text-primary">{response.data.message}</div>
@@ -36,12 +92,6 @@ export const AddUserPage = () => {
                 setIsDialogOpen(true);
             }
         } catch (error: any) {
-            if (error instanceof ZodError) {
-                const messages = error.issues.map((issue) => issue.message).join(' & ');
-                toast.error(
-                    <div className="text-destructive">{messages}</div>
-                )
-            }
             if (error.response?.data?.error) {
                 toast.error(
                     <div className="text-destructive">{error.response?.data?.error}</div>

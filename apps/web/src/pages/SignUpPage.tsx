@@ -1,15 +1,14 @@
 import { SignupForm } from "@repo/ui";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { ZodError } from "zod";
-import { CreateUserSchema, type ApiSuccessResponse, type InputUserForm } from "@repo/types";
+import { type ApiSuccessResponse, type InputUserForm } from "@repo/types";
 import { toast } from "sonner"
 import api from "../lib/axios";
 import { useAuthStore } from "../stores/useAuthStore";
 import { useEffect, useState } from "react";
 
 type SponsorNameState = {
-  name: string;
-  status: boolean;
+    name: string;
+    status: boolean;
 };
 
 export const SignUpPage = () => {
@@ -30,9 +29,64 @@ export const SignUpPage = () => {
     };
 
     const handleSignUp = async (formData: InputUserForm) => {
+        if (!formData.name || formData.name.trim().length < 2) {
+            toast.error(
+                <div className="text-destructive">
+                    Name must be at least 2 characters
+                </div>
+            );
+            return;
+        }
+
+        if (!formData.mobile || formData.mobile.trim().length < 10) {
+            toast.error(
+                <div className="text-destructive">
+                    Mobile number must be at least 10 digits
+                </div>
+            );
+            return;
+        }
+
+        if (
+            !formData.email ||
+            !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)
+        ) {
+            toast.error(
+                <div className="text-destructive">
+                    Invalid email address
+                </div>
+            );
+            return;
+        }
+
+        if (!formData.password || formData.password.length < 8) {
+            toast.error(
+                <div className="text-destructive">
+                    Password must be at least 8 characters
+                </div>
+            );
+            return;
+        }
+
+        if (!formData.sponsorPositionId) {
+            toast.error(
+                <div className="text-destructive">
+                    Sponsor Position ID is required
+                </div>
+            );
+            return;
+        }
+
+        if (!formData.activationPin) {
+            toast.error(
+                <div className="text-destructive">
+                    Activation pin is required
+                </div>
+            );
+            return;
+        }
         try {
-            const validatedData = CreateUserSchema.parse(formData)
-            const response: ApiSuccessResponse = await api.post("/sign-up", validatedData)
+            const response: ApiSuccessResponse = await api.post("/sign-up", formData)
             if (response.data.success) {
                 await fetchUser()
                 toast.success(
@@ -41,12 +95,6 @@ export const SignUpPage = () => {
                 navigate("/dashboard")
             }
         } catch (error: any) {
-            if (error instanceof ZodError) {
-                const messages = error.issues.map((issue) => issue.message).join(' & ');
-                toast.error(
-                    <div className="text-destructive">{messages}</div>
-                )
-            }
             if (error.response?.data?.error) {
                 toast.error(
                     <div className="text-destructive">{error.response?.data?.error}</div>
