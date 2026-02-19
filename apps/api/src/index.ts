@@ -4,7 +4,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
 import userRoutes from './routes/user.routes';
-import adminRoutes from './routes/admin.routes'
+import adminRoutes from './routes/admin.routes';
 
 dotenv.config();
 
@@ -15,15 +15,10 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 const allowedOrigins = [
-  'http://localhost:5173', // web app
-  'http://localhost:5174'  // admin app
+  'https://growthhelp.in',
+  'https://www.growthhelp.in',
+  'https://admin.growthhelp.in',
 ];
-
-// const allowedOrigins = [
-//   'http://192.168.31.185:5173', // web app
-//   'http://192.168.31.185:5174'  // admin app
-// ];
-
 
 app.use(cors({
   origin: (origin, callback) => {
@@ -36,12 +31,6 @@ app.use(cors({
   credentials: true
 }));
 
-// app.use(cors({
-//   origin: true,
-//   credentials: true
-// }));
-
-
 app.use(cookieParser());
 
 // Health check route
@@ -51,13 +40,12 @@ app.get('/health', (req: Request, res: Response) => {
 
 // API routes
 app.use('/api/v1', userRoutes);
-app.use('/api/v1/admin',adminRoutes)
+app.use('/api/v1/admin', adminRoutes);
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
 app.listen(Number(port), "0.0.0.0", () => {
   console.log(`⚡️[server]: Server is running at http://localhost:${port}`);
   console.log(`⚡️[server]: Network access: http://0.0.0.0:${port}`);
 });
-
 
 export default app;
