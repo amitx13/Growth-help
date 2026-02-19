@@ -36,17 +36,20 @@ import {
   QrCode as QrCodeIcon,
   ZoomIn,
   Upload,
+  User2Icon,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import type { AdminbankDetails, LevelConfig } from '@repo/types';
+import type { AdminbankDetails, AdminProfileData, LevelConfig } from '@repo/types';
 import api from '../lib/axios';
 
 export const Settings = () => {
   const [levelConfigs, setLevelConfigs] = useState<LevelConfig[]>([]);
   const [bankDetails, setBankDetails] = useState<AdminbankDetails | null>(null);
+  const [adminProfileData, setAdminProfileData] = useState<AdminProfileData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [isEditingBank, setIsEditingBank] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
 
   const [qrCodeFile, setQrCodeFile] = useState<File | null>(null);
   const [qrCodePreview, setQrCodePreview] = useState<string | null>(null);
@@ -59,6 +62,7 @@ export const Settings = () => {
 
       setLevelConfigs(res.data.levelConfigs || []);
       setBankDetails(res.data.bankDetails || null);
+      setAdminProfileData(res.data.adminProfileData || null)
 
       // Set QR preview if exists
       if (res.data.bankDetails?.bankDetails?.qrCode) {
@@ -158,6 +162,52 @@ export const Settings = () => {
     }
   };
 
+  const handleSaveProfile = async () => {
+    if (!adminProfileData) {
+      toast.error(<div className="text-red-500">Profile data not available</div>);
+      return;
+    }
+
+    const { email, mobile, password } = adminProfileData;
+
+    if (!email || !mobile || !password) {
+      toast.error(<div className="text-red-500">All fields are required</div>);
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+
+      const res = await api.post(
+        '/updateAdminProfile',
+        {
+          email,
+          mobile,
+          password,
+        },
+        { withCredentials: true }
+      );
+
+      if (res.data.success) {
+        toast.success(
+          <div className="text-primary">
+            {res.data.message || 'Profile updated successfully'}
+          </div>
+        );
+        await loadAdminConfigs();
+        setIsEditingProfile(false);
+      }
+    } catch (error: any) {
+      if (error.response?.data?.error) {
+        toast.error(<div className="text-red-500">{error.response.data.error}</div>);
+      } else {
+        toast.error(<div className="text-red-500">{error.message}</div>);
+      }
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const getLevelColor = (level: number) => {
     const colors = ['bg-green-500', 'bg-blue-500', 'bg-purple-500', 'bg-orange-500', 'bg-red-500'];
     return colors[(level - 1) % colors.length];
@@ -188,16 +238,23 @@ export const Settings = () => {
       </div>
 
       <Tabs defaultValue="levels" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 h-auto p-1">
-          <TabsTrigger value="levels" className="gap-2 py-3">
+        <TabsList className="grid w-full grid-cols-3 h-auto p-1">
+          <TabsTrigger value="levels" className="flex items-center justify-center gap-2 py-3">
             <TrendingUp className="w-4 h-4" />
             <span className="hidden sm:inline">Level Configuration</span>
             <span className="sm:hidden">Levels</span>
           </TabsTrigger>
-          <TabsTrigger value="bank" className="gap-2 py-3">
+
+          <TabsTrigger value="bank" className="flex items-center justify-center gap-2 py-3">
             <CreditCard className="w-4 h-4" />
             <span className="hidden sm:inline">Bank Details</span>
             <span className="sm:hidden">Bank</span>
+          </TabsTrigger>
+
+          <TabsTrigger value="profile" className="flex items-center justify-center gap-2 py-3">
+            <User2Icon className="w-4 h-4" />
+            <span className="hidden sm:inline">Personal Details</span>
+            <span className="sm:hidden">Profile</span>
           </TabsTrigger>
         </TabsList>
 
@@ -345,9 +402,9 @@ export const Settings = () => {
                       </Button>
                     ) : (
                       <div className="flex gap-2 w-full sm:w-auto">
-                        <Button 
-                          size="sm" 
-                          onClick={handleSaveBank} 
+                        <Button
+                          size="sm"
+                          onClick={handleSaveBank}
                           className="gap-2 flex-1 sm:flex-initial"
                           disabled={isSaving}
                         >
@@ -407,9 +464,9 @@ export const Settings = () => {
                           setBankDetails((prev) =>
                             prev?.bankDetails
                               ? {
-                                  ...prev,
-                                  bankDetails: { ...prev.bankDetails, bankName: e.target.value },
-                                }
+                                ...prev,
+                                bankDetails: { ...prev.bankDetails, bankName: e.target.value },
+                              }
                               : prev
                           )
                         }
@@ -430,9 +487,9 @@ export const Settings = () => {
                           setBankDetails((prev) =>
                             prev?.bankDetails
                               ? {
-                                  ...prev,
-                                  bankDetails: { ...prev.bankDetails, accountNumber: e.target.value },
-                                }
+                                ...prev,
+                                bankDetails: { ...prev.bankDetails, accountNumber: e.target.value },
+                              }
                               : prev
                           )
                         }
@@ -453,12 +510,12 @@ export const Settings = () => {
                           setBankDetails((prev) =>
                             prev?.bankDetails
                               ? {
-                                  ...prev,
-                                  bankDetails: {
-                                    ...prev.bankDetails,
-                                    ifscCode: e.target.value.toUpperCase(),
-                                  },
-                                }
+                                ...prev,
+                                bankDetails: {
+                                  ...prev.bankDetails,
+                                  ifscCode: e.target.value.toUpperCase(),
+                                },
+                              }
                               : prev
                           )
                         }
@@ -479,9 +536,9 @@ export const Settings = () => {
                           setBankDetails((prev) =>
                             prev?.bankDetails
                               ? {
-                                  ...prev,
-                                  bankDetails: { ...prev.bankDetails, upiId: e.target.value },
-                                }
+                                ...prev,
+                                bankDetails: { ...prev.bankDetails, upiId: e.target.value },
+                              }
                               : prev
                           )
                         }
@@ -502,9 +559,9 @@ export const Settings = () => {
                           setBankDetails((prev) =>
                             prev?.bankDetails
                               ? {
-                                  ...prev,
-                                  bankDetails: { ...prev.bankDetails, gPay: e.target.value },
-                                }
+                                ...prev,
+                                bankDetails: { ...prev.bankDetails, gPay: e.target.value },
+                              }
                               : prev
                           )
                         }
@@ -619,6 +676,142 @@ export const Settings = () => {
                   <p className="text-xs text-muted-foreground">
                     Bank details will appear here once configured by the system administrator
                   </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="profile" className="space-y-6 mt-6">
+          <Card className="border-0 shadow-xl">
+            <CardHeader className="border-b bg-muted/30 p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+                  <User2Icon className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
+                  Admin Profile Details
+                </CardTitle>
+
+                {adminProfileData && (
+                  <>
+                    {!isEditingProfile ? (
+                      <Button
+                        size="sm"
+                        onClick={() => setIsEditingProfile(true)}
+                        className="gap-2 w-full sm:w-auto"
+                      >
+                        <Edit className="w-4 h-4" />
+                        Edit
+                      </Button>
+                    ) : (
+                      <div className="flex gap-2 w-full sm:w-auto">
+                        <Button
+                          size="sm"
+                          onClick={handleSaveProfile}
+                          className="gap-2 flex-1 sm:flex-initial"
+                          disabled={isSaving}
+                        >
+                          <Save className="w-4 h-4" />
+                          {isSaving ? 'Saving...' : 'Save'}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setIsEditingProfile(false);
+                            loadAdminConfigs();
+                          }}
+                          className="gap-2 flex-1 sm:flex-initial"
+                          disabled={isSaving}
+                        >
+                          <X className="w-4 h-4" />
+                          Cancel
+                        </Button>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            </CardHeader>
+
+            <CardContent className="p-4 sm:p-6">
+              {adminProfileData ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* ID */}
+                  <div>
+                    <Label htmlFor="id" className="text-sm font-medium">
+                      Admin ID *
+                    </Label>
+                    <Input
+                      id="id"
+                      value={adminProfileData.id || ''}
+                      disabled={true}
+                      className="mt-2 h-11"
+                      placeholder="Enter admin ID"
+                    />
+                  </div>
+
+                  {/* Email */}
+                  <div>
+                    <Label htmlFor="email" className="text-sm font-medium">
+                      Email *
+                    </Label>
+                    <Input
+                      id="email"
+                      value={adminProfileData.email || ''}
+                      onChange={(e) =>
+                        setAdminProfileData((prev) =>
+                          prev ? { ...prev, email: e.target.value } : prev
+                        )
+                      }
+                      disabled={!isEditingProfile}
+                      className="mt-2 h-11"
+                      placeholder="Enter email"
+                    />
+                  </div>
+
+                  {/* Mobile */}
+                  <div>
+                    <Label htmlFor="mobile" className="text-sm font-medium">
+                      Mobile *
+                    </Label>
+                    <Input
+                      id="mobile"
+                      value={adminProfileData.mobile || ''}
+                      onChange={(e) =>
+                        setAdminProfileData((prev) =>
+                          prev ? { ...prev, mobile: e.target.value } : prev
+                        )
+                      }
+                      disabled={!isEditingProfile}
+                      className="mt-2 h-11"
+                      placeholder="Enter mobile number"
+                    />
+                  </div>
+
+                  {/* Password — ALWAYS VISIBLE */}
+                  <div>
+                    <Label htmlFor="password" className="text-sm font-medium">
+                      Password *
+                    </Label>
+                    <Input
+                      id="password"
+                      type="text"
+                      value={adminProfileData.password || ''}
+                      onChange={(e) =>
+                        setAdminProfileData((prev) =>
+                          prev ? { ...prev, password: e.target.value } : prev
+                        )
+                      }
+                      disabled={!isEditingProfile}
+                      className="mt-2 h-11"
+                      placeholder="Enter password"
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <AlertCircle className="w-12 h-12 text-muted-foreground mx-auto mb-3 opacity-50" />
+                  <p className="text-sm text-muted-foreground">No profile data found</p>
                 </div>
               )}
             </CardContent>

@@ -250,7 +250,7 @@ function RequestPinsTab() {
             const userDetails = await api.get(`/getAdminDetails`);
             setSelectedUserDetails(userDetails.data.user);
             toast.success(
-                <div className="text-green-600">Admin details loaded</div>
+                <div className="text-green-600">stockist details loaded</div>
             );
         } catch (error: any) {
             if (error.response?.data?.error) {
@@ -427,7 +427,7 @@ function RequestPinsTab() {
                             Select Request Type
                         </CardTitle>
                         <p className="text-sm text-muted-foreground mt-2">
-                            Choose whether to request pins from admin or another user
+                            Choose whether to request pins from stockist or another user
                         </p>
                     </CardHeader>
                     <CardContent>
@@ -446,7 +446,7 @@ function RequestPinsTab() {
                                             <Shield className="w-4 h-4 text-purple-600" />
                                         </div>
                                         <div>
-                                            <p className="font-semibold">Request from Admin</p>
+                                            <p className="font-semibold">Request from stockist</p>
                                             <p className="text-xs text-muted-foreground">
                                                 Official pin purchase
                                             </p>
@@ -511,7 +511,7 @@ function RequestPinsTab() {
                                     {requestType === 'admin' ? (
                                         <Badge className="bg-purple-500 text-white">
                                             <Shield className="w-3 h-3 mr-1" />
-                                            Admin
+                                            stockist
                                         </Badge>
                                     ) : (
                                         <Badge className="bg-blue-500 text-white">
@@ -888,6 +888,37 @@ function TransferPinsTab({ totalPins, onTransfer }: { totalPins: number, onTrans
     const { user } = useAuthStore()
     const [recipientUserId, setRecipientUserId] = useState('');
     const [transferCount, setTransferCount] = useState(1);
+    const [userName, setUserName] = useState<string>('')
+
+    useEffect(() => {
+        if (recipientUserId.length === 0) return
+        if (recipientUserId.length !== 7) {
+            setUserName('No user found');
+            return;
+        }
+
+        let cancelled = false;
+
+        const fetchUserName = async (id: string) => {
+            try {
+                const res = await api.get(`/fetchUserName/${id}`);
+                if (!cancelled) {
+                    setUserName(res.data.name);
+                }
+            } catch (error: any) {
+                if (!cancelled) {
+                    setUserName('');
+                    // optional: toast only once or silently fail
+                }
+            }
+        };
+
+        fetchUserName(recipientUserId);
+
+        return () => {
+            cancelled = true;
+        };
+    }, [recipientUserId]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -952,6 +983,12 @@ function TransferPinsTab({ totalPins, onTransfer }: { totalPins: number, onTrans
                                 onChange={(e) => setRecipientUserId(e.target.value)}
                                 required
                             />
+                            <p className="text-xs text-muted-foreground mt-1">
+                                Sending pins to
+                                <span className='text-primary pl-1'>
+                                    {userName}
+                                </span>
+                            </p>
                         </div>
 
                         <div>

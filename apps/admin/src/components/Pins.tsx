@@ -67,6 +67,7 @@ export const Pins = () => {
   const [isTransferModalOpen, setIsTransferModalOpen] = useState<boolean>(false);
   const [transferUserId, setTransferUserId] = useState<string>('');
   const [transferPinCount, setTransferPinCount] = useState<string>('');
+  const [userName, setUserName] = useState<string>('')
 
   const [isMakingReq, setIsMakingReq] = useState<boolean>(false)
 
@@ -97,6 +98,35 @@ export const Pins = () => {
   useEffect(() => {
     loadPinsDetails();
   }, [loadPinsDetails]);
+
+  useEffect(() => {
+    if (transferUserId.length !== 7) {
+      setUserName('No user found');
+      return;
+    }
+
+    let cancelled = false;
+
+    const fetchUserName = async (id: string) => {
+      try {
+        const res = await api.get(`/fetchUserName/${id}`);
+        if (!cancelled) {
+          setUserName(res.data.name);
+        }
+      } catch (error: any) {
+        if (!cancelled) {
+          setUserName('');
+          // optional: toast only once or silently fail
+        }
+      }
+    };
+
+    fetchUserName(transferUserId);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [transferUserId]);
 
   const filteredPins = pins
     .filter((pin) => {
@@ -296,10 +326,10 @@ export const Pins = () => {
 
 
   const stats = {
-    toatlPinsOwnedByAdmin: pins.filter((p) => p.currentOwner === "GH0001").length,
+    toatlPinsOwnedByAdmin: pins.filter((p) => p.role === "ADMIN").length,
     totalPins: pins.length,
     activePins: pins.filter((p) => p.status).length,
-    activePinsOwnedByAdmin: pins.filter((p) => p.currentOwner === "GH0001" && p.status).length,
+    activePinsOwnedByAdmin: pins.filter((p) => p.role === "ADMIN" && p.status).length,
     usedPins: pins.filter((p) => !p.status).length,
     pendingRequests: pendingRequests.length,
   };
@@ -1116,7 +1146,10 @@ export const Pins = () => {
                 className="mt-2 h-11"
               />
               <p className="text-xs text-muted-foreground mt-1">
-                The user ID to transfer pins to
+                Sending pins to
+                <span className='text-primary pl-1'>
+                  {userName}
+                </span>
               </p>
             </div>
 

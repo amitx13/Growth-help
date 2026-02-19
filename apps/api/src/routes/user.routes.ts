@@ -7,6 +7,7 @@ import { addNewUser, createUser, updateBankDetails, updateUserDetails } from '..
 import { login, logout } from '../controllers/user.authController';
 import { createReentryPosition } from '../controllers/user.re-entryController';
 import { confirmUserPinRequest, SubmitPinRequest, transferPin } from '../controllers/user.pinController';
+import { getUserName } from '../controllers/admin.controllers';
 
 const router = Router();
 
@@ -23,6 +24,7 @@ router.get('/getUserEarningsReport/:userId', authMiddleware, getUserAllPositions
 router.get('/getUserRetryPaymentDetails/:paymentId', authMiddleware, getUserRetryPaymentDetails)
 router.get('/getUserPinsReq/:userId', authMiddleware, getUserAllPinRequests)
 router.get('/fetchSponsorName/:sponsorPositionId', getSponsorName)
+router.get('/fetchUserName/:transferUserId',authMiddleware, getUserName)
 
 
 //auth-routes

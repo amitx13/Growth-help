@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { prisma } from '@repo/database';
 import { randomUUID } from 'crypto';
-import { AdminbankDetails, AdminPaymentSchema, ApiErrorResponse, ApiSuccessResponse, DashboardData, DashboardStats, LevelConfig, LoginSchema, PendingPayment, PendingPinRequest, pinRequests, pinsModel, RecentUser, UpdateUserProfileSchema, UserInAdmin, ZodError } from '@repo/types';
+import { AdminbankDetails, AdminPaymentSchema, AdminProfileData, ApiErrorResponse, ApiSuccessResponse, DashboardData, DashboardStats, LevelConfig, LoginSchema, PendingPayment, PendingPinRequest, pinRequests, pinsModel, RecentUser, UpdateUserProfileSchema, UserInAdmin, ZodError } from '@repo/types';
 import jwt from 'jsonwebtoken';
 import { getAdminSystemIds } from '../lib/system';
 import { deleteUploadedFile } from './user.createController';
@@ -349,7 +349,7 @@ export const getAdminDashboardData = async (req: Request, res: Response) => {
       }),
       prisma.user.findMany({
         where: {
-          role:"USER",
+          role: "USER",
           createdAt: { gte: last24Hours }
         },
         select: {
@@ -368,7 +368,7 @@ export const getAdminDashboardData = async (req: Request, res: Response) => {
       }),
       prisma.user.count({
         where: {
-          role:"USER",
+          role: "USER",
           createdAt: { gte: last24Hours }
         },
       }),
@@ -686,7 +686,8 @@ export const getAllPinsDetails = async (req: Request, res: Response) => {
         createdAt: true,
         owner: {
           select: {
-            name: true
+            name: true,
+            role: true
           }
         },
         consumer: {
@@ -745,6 +746,7 @@ export const getAllPinsDetails = async (req: Request, res: Response) => {
       pinCode: p.pinCode,
       status: p.status,
       currentOwner: p.currentOwner,
+      role: p.owner.role,
       currentOwnerName: p.owner.name,
       usedBy: p.usedBy,
       usedByName: p.consumer?.name || null,
@@ -781,6 +783,10 @@ export const getAdminConfigs = async (req: Request, res: Response) => {
         id: admin.userId,
       },
       select: {
+        id: true,
+        email: true,
+        mobile: true,
+        password: true,
         name: true,
         bankDetails: {
           select: {
@@ -836,10 +842,18 @@ export const getAdminConfigs = async (req: Request, res: Response) => {
       bankDetails: bankData
     }
 
+    const adminProfileData: AdminProfileData = {
+      id: adminBankDetails.id,
+      email: adminBankDetails.email,
+      mobile: adminBankDetails.mobile,
+      password: adminBankDetails.password,
+    }
+
     return res.status(200).json({
       success: true,
       levelConfigs,
       bankDetails,
+      adminProfileData
     })
 
   } catch (error: any) {
@@ -1272,7 +1286,7 @@ export const updateBankDetailsViaAdmin = async (req: Request, res: Response) => 
       }
       return res.status(400).json(errorResponse)
     }
-    
+
     const { bankName, accountNumber, ifscCode, upiId, gPay } = req.body;
 
     if (req.file) {
@@ -1355,6 +1369,98 @@ export const updateBankDetailsViaAdmin = async (req: Request, res: Response) => 
     return res.status(500).json({
       success: false,
       error: error.message || "Unable to update bank details.",
+    });
+  }
+};
+
+export const getUserName = async (req: Request, res: Response) => {
+  const { transferUserId } = req.params
+
+  if (!transferUserId) {
+    const errorResponse: ApiErrorResponse = {
+      success: false,
+      error: "UserId not found"
+    }
+    return res.status(400).json(errorResponse)
+  }
+  try {
+
+    const user = await prisma.user.findUnique({
+      where: {
+        id: transferUserId
+      },
+      select: {
+        name: true
+      }
+    })
+
+    if (!user) {
+      const errorResponse: ApiErrorResponse = {
+        success: false,
+        error: "Invalid userId."
+      }
+      return res.status(400).json(errorResponse)
+    }
+
+    return res.status(200).json({
+      success: true,
+      name: user.name,
+    })
+
+  } catch (error: any) {
+
+    const errorResponse: ApiErrorResponse = {
+      success: false,
+      error: error.message || "Failed to fetch Sponsor name"
+    }
+    return res.status(500).json(errorResponse);
+  }
+}
+
+export const updateAdminProfile = async (req: Request, res: Response) => {
+  const { email, mobile, password } = req.body;
+
+  // Basic validation
+  if (!email || !mobile || !password) {
+    return res.status(400).json({
+      success: false,
+      error: 'All fields (id, email, mobile, password) are required',
+    });
+  }
+
+  try {
+    const admin = await getAdminSystemIds();
+
+    const adminUpdation = await prisma.user.update({
+      where: {
+        id:admin.userId,
+      },
+      data: {
+        email,
+        mobile,
+        password,
+      },
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: 'Admin profile updated successfully',
+      data: adminUpdation,
+    });
+  } catch (error: any) {
+    console.error('updateAdminProfile error:', error);
+
+    // Prisma-specific safety
+    if (error.code === 'P2025') {
+      return res.status(404).json({
+        success: false,
+        error: 'Admin not found',
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to update admin profile',
     });
   }
 };

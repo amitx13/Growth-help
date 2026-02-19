@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { activateUserAccount, adminLogin, directlyTransferPins, fetchAdminDetails, generatePin, getAdminConfigs, getAdminDashboardData, getAllPaymentDetails, getAllPinsDetails, getUsersDetails, updateAdminBankDetails, updateBankDetailsViaAdmin, updateUserDetailsViaAdmin } from '../controllers/admin.controllers';
+import { activateUserAccount, adminLogin, directlyTransferPins, fetchAdminDetails, generatePin, getAdminConfigs, getAdminDashboardData, getAllPaymentDetails, getAllPinsDetails, getUserName, getUsersDetails, updateAdminBankDetails, updateAdminProfile, updateBankDetailsViaAdmin, updateUserDetailsViaAdmin } from '../controllers/admin.controllers';
 import { confirmActivationPayment, confirmUpgradeAndSponsorPaymentViaAdmin,  } from '../controllers/user.controllers';
 import { adminAuthMiddleware } from '../middleware/adminAuth';
 import { processImage, upload } from '../middleware/upload';
@@ -12,12 +12,14 @@ router.get('/allUserDetails',adminAuthMiddleware,getUsersDetails)
 router.get('/getAllPaymentsDetails',adminAuthMiddleware,getAllPaymentDetails)
 router.get('/getAllPinDetails',adminAuthMiddleware,getAllPinsDetails)
 router.get('/getAdminConfigs',adminAuthMiddleware,getAdminConfigs)
+router.get('/fetchUserName/:transferUserId',adminAuthMiddleware, getUserName)
 
 router.post('/sign-in',adminLogin)
 router.post('/confirm-pin-transfer',adminAuthMiddleware,confirmUserPinRequest)
 router.post('/generate-pin',adminAuthMiddleware,generatePin)
 router.post('/transfer-pins-direct',adminAuthMiddleware,directlyTransferPins)
-router.post ('/activate-user-account',adminAuthMiddleware,activateUserAccount)
+router.post('/activate-user-account',adminAuthMiddleware,activateUserAccount)
+router.post('/updateAdminProfile',adminAuthMiddleware,updateAdminProfile)
 
 router.post ('/confirmActivationPayment/:paymentId',adminAuthMiddleware,confirmActivationPayment)
 router.post('/confirm-upgradeAndSponsor-pay/:paymentId',adminAuthMiddleware,confirmUpgradeAndSponsorPaymentViaAdmin)

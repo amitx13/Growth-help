@@ -1,13 +1,155 @@
 <!doctype html>
-<html lang="en">
+<html lang="en-IN">
   <head>
+    <!-- ═══════════════════════════════════════════
+         ESSENTIAL
+    ═══════════════════════════════════════════ -->
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>web</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+
+    <!-- ═══════════════════════════════════════════
+         PRIMARY SEO
+    ═══════════════════════════════════════════ -->
+    <title>Growth Help | India's #1 P2P Financial Support Platform</title>
+    <meta name="title" content="Growth Help | India's #1 P2P Financial Support Platform" />
+    <meta
+      name="description"
+      content="Join Growth Help — India's first trusted peer-to-peer (P2P) financial support platform. Earn ₹500 per referral, grow your network, and achieve financial freedom. Start with just ₹550 today."
+    />
+    <meta
+      name="keywords"
+      content="Growth Help, P2P financial support India, peer to peer crowdfunding, earn money online India, referral income, financial freedom India, growthhelp.in, community crowdfunding"
+    />
+    <meta name="author" content="Growth Help" />
+    <meta name="robots" content="index, follow" />
+    <meta name="googlebot" content="index, follow" />
+    <link rel="canonical" href="https://growthhelp.in/" />
+
+    <!-- ═══════════════════════════════════════════
+         OPEN GRAPH — Facebook, WhatsApp, LinkedIn
+    ═══════════════════════════════════════════ -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://growthhelp.in/" />
+    <meta property="og:site_name" content="Growth Help" />
+    <meta property="og:title" content="Growth Help | India's #1 P2P Financial Support Platform" />
+    <meta
+      property="og:description"
+      content="India's first trusted P2P financial support platform. Earn ₹500 per referral, grow your network, and unlock financial freedom. Join thousands of Indians — start with just ₹550."
+    />
+    <meta property="og:locale" content="en_IN" />
+
+    <!-- ═══════════════════════════════════════════
+         TWITTER CARD
+    ═══════════════════════════════════════════ -->
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:url" content="https://growthhelp.in/" />
+    <meta name="twitter:title" content="Growth Help | India's #1 P2P Financial Support Platform" />
+    <meta
+      name="twitter:description"
+      content="India's first trusted P2P financial support platform. Earn ₹500 per referral, build your network, and achieve financial freedom. Join with just ₹550!"
+    />
+
+    <!-- ═══════════════════════════════════════════
+         FAVICONS
+    ═══════════════════════════════════════════ -->
+    <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="shortcut icon" href="/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+
+    <!-- ═══════════════════════════════════════════
+         PWA / MOBILE / THEME
+         Brand primary: hsl(142.1 76.2% 36.3%) = #16a34a
+    ═══════════════════════════════════════════ -->
+    <meta name="theme-color" content="#16a34a" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Growth Help" />
+    <meta name="application-name" content="Growth Help" />
+    <meta name="format-detection" content="telephone=no" />
+
+    <!-- Windows Pinned Site Tile -->
+    <meta name="msapplication-TileColor" content="#16a34a" />
+    <meta name="msapplication-config" content="/browserconfig.xml" />
+
+    <!-- ═══════════════════════════════════════════
+         STRUCTURED DATA — JSON-LD (Google Rich Results)
+    ═══════════════════════════════════════════ -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "Growth Help",
+        "alternateName": "GrowthHelp",
+        "url": "https://growthhelp.in",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://growthhelp.in/growthHelp.png",
+          "width": 512,
+          "height": 512
+        },
+        "description": "India's first reliable peer-to-peer (P2P) financial support platform built on a community-driven crowdfunding system that helps people support each other and unlock financial opportunities.",
+        "slogan": "Empowering Financial Freedom",
+        "foundingLocation": {
+          "@type": "Country",
+          "name": "India"
+        },
+        "areaServed": "IN",
+        "knowsLanguage": ["en-IN", "hi"],
+        "contactPoint": {
+          "@type": "ContactPoint",
+          "contactType": "customer support",
+          "email": "support@growthhelp.in",
+          "availableLanguage": ["English", "Hindi"]
+        }
+      }
+    </script>
+
+    <!-- ═══════════════════════════════════════════
+         PERFORMANCE HINTS
+         Uncomment whichever services you actually use
+    ═══════════════════════════════════════════ -->
+    <!-- <link rel="preconnect" href="https://fonts.googleapis.com" /> -->
+    <!-- <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin /> -->
+    <!-- <link rel="dns-prefetch" href="//api.growthhelp.in" /> -->
   </head>
+
   <body>
     <div id="root"></div>
+
+    <noscript>
+      <style>
+        .noscript-wrapper {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          min-height: 100vh;
+          padding: 2rem;
+          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+          text-align: center;
+          background: #f9fafb;
+          color: #111827;
+          gap: 1rem;
+        }
+        .noscript-wrapper img { width: 120px; height: auto; }
+        .noscript-wrapper h1  { font-size: 2rem; margin: 0; color: #16a34a; }
+        .noscript-wrapper p   { font-size: 1.1rem; color: #4b5563; max-width: 480px; margin: 0; }
+        .noscript-wrapper a   { color: #16a34a; text-decoration: underline; }
+      </style>
+      <div class="noscript-wrapper">
+        <img src="/growthHelp.png" alt="Growth Help Logo" />
+        <h1>Growth Help</h1>
+        <p>Empowering Financial Freedom</p>
+        <p>This application requires JavaScript to run.<br />
+           Please enable JavaScript in your browser and reload the page.</p>
+        <p>Need help? <a href="mailto:support@growthhelp.in">support@growthhelp.in</a></p>
+      </div>
+    </noscript>
+
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

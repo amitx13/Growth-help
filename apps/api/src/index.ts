@@ -14,15 +14,15 @@ const port = process.env.PORT || 3000;
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// const allowedOrigins = [
-//   'http://localhost:5173', // web app
-//   'http://localhost:5174'  // admin app
-// ];
-
 const allowedOrigins = [
-  'http://192.168.31.185:5173', // web app
-  'http://192.168.31.185:5174'  // admin app
+  'http://localhost:5173', // web app
+  'http://localhost:5174'  // admin app
 ];
+
+// const allowedOrigins = [
+//   'http://192.168.31.185:5173', // web app
+//   'http://192.168.31.185:5174'  // admin app
+// ];
 
 
 app.use(cors({

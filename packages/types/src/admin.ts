@@ -107,7 +107,7 @@ type PaymentType = 'ACTIVATION' | 'UPGRADE' | 'SPONSOR_PAYMENT';
 
 export interface AdminPaymentSchema {
   id: string;
-  paid:boolean;
+  paid: boolean;
 
   senderName: string;
   senderUserId: string;
@@ -133,6 +133,7 @@ export interface pinsModel {
   pinCode: string
   status: boolean
   currentOwner: string
+  role:"USER"| "ADMIN"
   currentOwnerName: string
   usedBy: string | null
   usedByName: string | null
@@ -154,7 +155,7 @@ export interface pinRequests {
 
 export interface AdminbankDetails {
   AccountHolderName: string
-  bankDetails:BankType
+  bankDetails: BankType
 }
 
 export interface LevelConfig {
@@ -168,3 +169,10 @@ export interface LevelConfig {
 }
 
 export type Admin = z.infer<typeof AdminType>
+
+export interface AdminProfileData {
+  id: string,
+  email: string,
+  mobile: string,
+  password: string
+}
