@@ -1,6 +1,7 @@
 import { SignupForm } from "@repo/ui";
 import { useSearchParams } from "react-router-dom";
-import { CreateUserSchema, ZodError, type AddNewUser, type ApiSuccessResponse, type InputUserForm } from "@repo/types";
+import { ZodError } from "zod";
+import { CreateUserSchema, type AddNewUser, type ApiSuccessResponse, type InputUserForm } from "@repo/types";
 import { toast } from "sonner"
 import api from "../lib/axios";
 import { useEffect, useState } from "react";

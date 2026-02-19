@@ -1,6 +1,7 @@
 import { SignupForm } from "@repo/ui";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { CreateUserSchema, ZodError, type ApiSuccessResponse, type InputUserForm } from "@repo/types";
+import { ZodError } from "zod";
+import { CreateUserSchema, type ApiSuccessResponse, type InputUserForm } from "@repo/types";
 import { toast } from "sonner"
 import api from "../lib/axios";
 import { useAuthStore } from "../stores/useAuthStore";
