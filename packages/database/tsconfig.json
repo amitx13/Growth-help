@@ -11,6 +11,13 @@
     "strict": true,
     "skipLibCheck": true
   },
-  "include": ["**/*.ts", "prisma/**/*.ts"],
-  "exclude": ["node_modules", "dist", "generated"]
+  "include": [
+    "index.ts",
+    "prisma/**/*.ts",
+    "generated/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+  ]
 }
