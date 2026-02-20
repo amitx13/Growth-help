@@ -2,6 +2,11 @@
 
 Growth Help is a peer-to-peer crowdfunding platform that enables verified users to support each other financially through transparent transactions. The system includes a user-facing app, an admin dashboard, and a backend API.
 
+## Live URLs
+
+[User Pannel](growthhelp.in)
+[Admin Pannel](admin.growthhelp.in)
+
 ## 🧩 Project Structure
 
 This is a **Turborepo** project with multiple apps:
