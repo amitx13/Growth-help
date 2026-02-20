@@ -4,8 +4,8 @@ Growth Help is a peer-to-peer crowdfunding platform that enables verified users 
 
 ## Live URLs
 
-[User Pannel](growthhelp.in)
-[Admin Pannel](admin.growthhelp.in)
+[User Pannel](https://growthhelp.in/)
+[Admin Pannel](https://admin.growthhelp.in)
 
 ## 🧩 Project Structure
 
