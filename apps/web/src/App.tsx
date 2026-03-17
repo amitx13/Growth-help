@@ -16,6 +16,7 @@ import { NotificationCenter } from './components/Notification';
 import { PinManagement } from './components/Pin';
 import { AnimatedPageWrapper } from './components/AnimatedPageWrapper';
 import { AddUserPage } from './pages/AddUserPage';
+import { AutopoolPage } from './components/Autopool/AutopoolPage';
 
 function AppContent() {
   const location = useLocation();
@@ -64,6 +65,13 @@ function AppContent() {
         <ProtectedRoute>
           <AnimatedPageWrapper>
             <Wallet />
+          </AnimatedPageWrapper>
+        </ProtectedRoute>
+      } />
+      <Route path="/autopool" element={
+        <ProtectedRoute>
+          <AnimatedPageWrapper>
+            <AutopoolPage />
           </AnimatedPageWrapper>
         </ProtectedRoute>
       } />

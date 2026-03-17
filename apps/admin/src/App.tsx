@@ -12,6 +12,7 @@ import { Payments } from './components/Payments';
 import { Pins } from './components/Pins';
 import { Settings } from './components/Settings';
 import { AdminDashboard } from './components/AdminDashboard';
+import { AdminAutopoolPage } from './components/AdminAutopool/AdminAutopoolPage';
 
 function AppContent() {
   useAxiosInterceptor();
@@ -28,7 +29,7 @@ function AppContent() {
   return (
     <Routes>
       <Route path='/' element={
-          <Dashboard />
+        <Dashboard />
       } />
       <Route path='/dashboard' element={
         <ProtectedRoute>
@@ -53,6 +54,11 @@ function AppContent() {
       <Route path="/settings" element={
         <ProtectedRoute>
           <Settings />
+        </ProtectedRoute>
+      } />
+      <Route path="/autopool" element={
+        <ProtectedRoute>
+          <AdminAutopoolPage />
         </ProtectedRoute>
       } />
       <Route path="/login" element={

@@ -10,6 +10,7 @@ const routes: Route[] = [
     { label: 'Notifications', route: '/notifications', },
     { label: 'Community', route: '/community', },
     { label: 'Wallet', route: '/wallet', },
+    { label: 'Autopool', route: '/autopool' },
     { label: 'Pin', route: '/pin', },
     { label: 'Profile', route: '/profile', },
     { label: 'Logout', route: '/logout', },

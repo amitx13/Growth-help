@@ -928,6 +928,7 @@ export const activateUserAccount = async (req: Request, res: Response) => {
             id: true,
             directReferralCount: true,
             currentLevel: true,
+            userId:true,
             placedUnderPositionId: true,
             user: {
               select: {
@@ -977,15 +978,23 @@ export const activateUserAccount = async (req: Request, res: Response) => {
               });
             }
 
-            if (sponsorPosition.placedUnderPositionId) {
-              await tx.pendingLink.create({
+            const existingEntryLink = await tx.autopoolPendingLink.findFirst({
+              where: {
+                userId: sponsorPosition.userId,
+                linkType: 'ENTRY',
+                isCompleted: false,
+              }
+            });
+
+            if (!existingEntryLink) {
+              await tx.autopoolPendingLink.create({
                 data: {
-                  positionId: sponsorPosition.id,
-                  linkType: 'SPONSOR_PAYMENT',
-                  amount: 50,
+                  userId: sponsorPosition.userId,
+                  linkType: 'ENTRY',
+                  amount: 200,
                   isCompleted: false,
                 }
-              })
+              });
             }
           }
         }
@@ -1434,7 +1443,7 @@ export const updateAdminProfile = async (req: Request, res: Response) => {
 
     const adminUpdation = await prisma.user.update({
       where: {
-        id:admin.userId,
+        id: admin.userId,
       },
       data: {
         email,

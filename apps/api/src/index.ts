@@ -1,11 +1,12 @@
-import 'dotenv/config'; 
+import 'dotenv/config';
 import express, { Express, Request, Response } from 'express';
 import path from "path";
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import userRoutes from './routes/user.routes';
 import adminRoutes from './routes/admin.routes';
-
+import autopoolUserRoutes from './autopool/autopool.routes'
+import autopoolAdminRoutes from './autopool/autopool.admin.routes'
 
 const app: Express = express();
 const port = process.env.PORT || 3000;
@@ -14,9 +15,9 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 const allowedOrigins = [
-  'https://growthhelp.in',
-  'https://www.growthhelp.in',
-  'https://admin.growthhelp.in',
+  'https://update.growthhelp.in',
+  // 'https://www.growthhelp.in',
+  // 'https://admin.growthhelp.in',
 ];
 
 app.use(cors({
@@ -40,6 +41,8 @@ app.get('/health', (req: Request, res: Response) => {
 // API routes
 app.use('/api/v1', userRoutes);
 app.use('/api/v1/admin', adminRoutes);
+app.use("/api/v1/autopool", autopoolUserRoutes);
+app.use("/api/v1/admin/autopool", autopoolAdminRoutes);
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
 app.listen(Number(port), "0.0.0.0", () => {

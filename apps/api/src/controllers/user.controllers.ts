@@ -989,6 +989,7 @@ export const confirmActivationPayment = async (req: Request, res: Response) => {
             },
             select: {
               id: true,
+              userId: true,
               directReferralCount: true,
               currentLevel: true,
               placedUnderPositionId: true,
@@ -1042,15 +1043,23 @@ export const confirmActivationPayment = async (req: Request, res: Response) => {
                 });
               }
 
-              if (sponsorPosition.placedUnderPositionId) {
-                await tx.pendingLink.create({
+              const existingEntryLink = await tx.autopoolPendingLink.findFirst({
+                where: {
+                  userId: sponsorPosition.userId,
+                  linkType: 'ENTRY',
+                  isCompleted: false,
+                }
+              });
+
+              if (!existingEntryLink) {
+                await tx.autopoolPendingLink.create({
                   data: {
-                    positionId: sponsorPosition.id,
-                    linkType: 'SPONSOR_PAYMENT',
-                    amount: 50,
+                    userId: sponsorPosition.userId,
+                    linkType: 'ENTRY',
+                    amount: 200,
                     isCompleted: false,
                   }
-                })
+                });
               }
             }
           }

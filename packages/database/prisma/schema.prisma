@@ -56,8 +56,10 @@ model User {
   ownedPins Pin[] @relation("ownedPins")
   usedPins  Pin[] @relation("usedPins")
 
-  sentPinRequests     PinRequest[] @relation("pinReqFrom")
-  receivedPinRequests PinRequest[] @relation("pinReqTo")
+  sentPinRequests     PinRequest[]          @relation("pinReqFrom")
+  receivedPinRequests PinRequest[]          @relation("pinReqTo")
+  AutopoolAccount     AutopoolAccount[]
+  autopoolEntryLinks  AutopoolPendingLink[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -256,4 +258,141 @@ model PinRequest {
   @@index([toUserId])
   @@index([status])
   @@map("pin_requests")
+}
+
+// AUTOPOOL SYSTEM
+
+enum AutopoolAccountType {
+  ORIGINAL
+  REENTRY
+}
+
+enum AutopoolPaymentType {
+  ENTRY // Joining a level for the first time / re-entry
+  UPGRADE // Paying to move to next level
+}
+
+enum AutopoolPaymentStatus {
+  PENDING
+  APPROVED
+  UNDER_REVIEW
+  REJECTED
+}
+
+enum AutopoolLinkType {
+  ENTRY
+  UPGRADE
+  REENTRY
+}
+
+// Seeded once — holds rules per level
+model AutopoolLevelConfig {
+  id    String @id @default(cuid())
+  level Int    @unique
+
+  matrixWidth      Int // Max direct children: 2,4,6,8,10,12,14
+  entryFee         Int // Fee to enter/re-enter this level
+  reentryCount     Int // Re-entries triggered after 1st payment received
+  upgradeAtPayment Int? // Payment # that triggers upgrade link (null = Level 7)
+
+  @@map("autopool_level_configs")
+}
+
+// One record per account (original or re-entry) per user
+model AutopoolAccount {
+  id          String              @id @default(cuid())
+  userId      String
+  level       Int
+  accountType AutopoolAccountType @default(ORIGINAL)
+
+  // BFS tree structure
+  parentAccountId String?
+  treePosition    Int
+
+  // Upgrade tracking (self-referencing, optional — Level 1 originals won't have this)
+  upgradedFromAccountId String?
+  upgradedFromAccount   AutopoolAccount?  @relation("AutopoolUpgrade", fields: [upgradedFromAccountId], references: [id], onDelete: SetNull)
+  upgradedToAccounts    AutopoolAccount[] @relation("AutopoolUpgrade")
+
+  // State tracking
+  paymentsReceived Int     @default(0)
+  isActive         Boolean @default(false) // true after entry payment approved
+  isUpgradeLocked  Boolean @default(false) // true after upgrade link generated → slot frozen in BFS
+  reentriesCreated Int     @default(0)
+
+  // Relations
+  user     User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent   AutopoolAccount?  @relation("AutopoolTree", fields: [parentAccountId], references: [id], onDelete: SetNull)
+  children AutopoolAccount[] @relation("AutopoolTree")
+
+  sentPayments     AutopoolPayment[]     @relation("autopoolSender")
+  receivedPayments AutopoolPayment[]     @relation("autopoolReceiver")
+  pendingLinks     AutopoolPendingLink[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([level, treePosition])
+  @@index([userId])
+  @@index([level])
+  @@index([parentAccountId])
+  @@index([upgradedFromAccountId])
+  @@index([isActive])
+  @@index([isUpgradeLocked])
+  @@map("autopool_accounts")
+}
+
+model AutopoolPayment {
+  id String @id @default(cuid())
+
+  senderAccountId   String
+  receiverAccountId String
+
+  amount      Int
+  level       Int
+  paymentType AutopoolPaymentType
+  status      AutopoolPaymentStatus @default(PENDING)
+
+  screenshotUrl String?
+
+  senderAccount   AutopoolAccount @relation("autopoolSender", fields: [senderAccountId], references: [id], onDelete: Cascade)
+  receiverAccount AutopoolAccount @relation("autopoolReceiver", fields: [receiverAccountId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([senderAccountId])
+  @@index([receiverAccountId])
+  @@index([status])
+  @@index([level])
+  @@map("autopool_payments")
+}
+
+model AutopoolPendingLink {
+  id        String  @id @default(cuid())
+  accountId String? // null for ENTRY links
+  userId    String? // set only for ENTRY links
+
+  linkType AutopoolLinkType
+
+  // UPGRADE fields
+  targetLevel Int?
+  amount      Int?
+
+  // REENTRY fields
+  reentryCount    Int?
+  reentriesIssued Int  @default(0)
+
+  isCompleted Boolean @default(false)
+
+  account AutopoolAccount? @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  user    User?            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([accountId])
+  @@index([userId])
+  @@index([linkType])
+  @@index([isCompleted])
+  @@map("autopool_pending_links")
 }

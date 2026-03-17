@@ -9,6 +9,7 @@ const routes: Route[] = [
     { label: 'Payments', route: '/payments', },
     { label: 'Pin', route: '/pin', },
     { label: 'Settings', route: '/settings', },
+    { label: 'Autopool', route: '/autopool' },
     { label: 'Log in', route: '/login' },
     { label: 'Logout', route: '/logout', },
 ]

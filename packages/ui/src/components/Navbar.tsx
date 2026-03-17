@@ -25,7 +25,8 @@ import {
   UserPlus,
   Users,
   Wallet,
-  Sparkles
+  Sparkles,
+  Network
 } from "lucide-react";
 import { ModeToggle } from "./mode-toggle";
 
@@ -50,6 +51,7 @@ export const Navbar = ({ handleNavigateToRoutes, routeList, user }: NavbarProps)
     '/wallet': Wallet,
     '/pin': Key,
     '/users': Users,
+    '/autopool': Network,
     '/payments': Wallet,
     '/settings': Settings,
     '/login': LogIn,
