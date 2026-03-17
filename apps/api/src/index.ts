@@ -17,7 +17,7 @@ app.use(express.urlencoded({ extended: true }));
 const allowedOrigins = [
   'https://update.growthhelp.in',
   // 'https://www.growthhelp.in',
-  // 'https://admin.growthhelp.in',
+  'https://admin.growthhelp.in',
 ];
 
 app.use(cors({
