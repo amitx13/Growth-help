@@ -15,6 +15,7 @@ import { IncomingPaymentsSection } from './IncomingPaymentsSection'
 import { PaymentSubmitModal } from './PaymentSubmitModal'
 
 export const AutopoolPage = () => {
+  const [activeTab, setActiveTab] = useState('links')
   const [links, setLinks] = useState<AutopoolPendingLink[]>([])
   const [accounts, setAccounts] = useState<AutopoolAccount[]>([])
   const [incomingPayments, setIncomingPayments] = useState<AutopoolIncomingPayment[]>([])
@@ -94,7 +95,7 @@ export const AutopoolPage = () => {
         </div>
 
         {/* Tabs */}
-        <Tabs defaultValue="links">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-3 mb-6">
             <TabsTrigger value="links" className="gap-1.5">
               <Link2 className="w-4 h-4" />
@@ -129,7 +130,11 @@ export const AutopoolPage = () => {
           </TabsContent>
 
           <TabsContent value="accounts">
-            <MyAccountsSection accounts={accounts} onPaymentModalOpen={setPaymentModalData} />
+            <MyAccountsSection
+              accounts={accounts}
+              onPaymentModalOpen={setPaymentModalData}
+              onGoToLinks={() => setActiveTab('links')}
+            />
           </TabsContent>
 
           <TabsContent value="incoming">
