@@ -557,11 +557,12 @@ export const generatePaymentDetailsFromPendingLink = async (req: Request, res: R
           }
         },
         select: {
-          sponsorPaid: true
+          sponsorPaid: true,
+          levelNumber:true
         }
       })
 
-      if (!userlevelData?.sponsorPaid) {
+      if (userlevelData && !userlevelData.sponsorPaid && userlevelData.levelNumber !== 1) {
         const errorResponse: ApiErrorResponse = {
           success: false,
           error: `Unable to Upgrade since sponsor payment of Level: ${currentPosition.currentLevel} is pending`,
