@@ -17,7 +17,7 @@ export interface BankDetails {
 export interface AutopoolPendingLink {
   id: string
   accountId: string | null
-  userId: string | null
+  positionId: string | null
   linkType: AutopoolLinkType
   targetLevel: number | null
   amount: number | null
@@ -25,29 +25,34 @@ export interface AutopoolPendingLink {
   reentriesIssued: number
   isCompleted: boolean
   createdAt: string
-  account: { level: number; accountType: AutopoolAccountType } | null
+  account: {
+    level: number
+    accountType: AutopoolAccountType
+    positionId: string
+  } | null
 }
 
-// All sent payments — FE filters by status for dead-end detection AND earnings
 export interface AutopoolAccountPayment {
   id: string
   status: AutopoolPaymentStatus
   amount: number
 }
 
-// Parent account info — used for resume payment modal + upline display
 export interface AutopoolAccountParent {
   id: string
-  user: {
-    name: string
-    mobile: string
-    bankDetails: BankDetails | null
+  position: {
+    positionType: string
+    user: {
+      name: string
+      mobile: string
+      bankDetails: BankDetails | null
+    }
   }
 }
 
 export interface AutopoolAccount {
   id: string
-  userId: string
+  positionId: string
   level: number
   accountType: AutopoolAccountType
   parentAccountId: string | null
@@ -58,12 +63,10 @@ export interface AutopoolAccount {
   isUpgradeLocked: boolean
   reentriesCreated: number
   pendingLinks: AutopoolPendingLink[]
-  // All statuses — filter by status in FE for dead-end detection vs earnings
   sentPayments: AutopoolAccountPayment[]
-  // APPROVED only — for gross earnings
   receivedPayments: { amount: number }[]
-  // null only for admin root (treePosition=1, parentAccountId=null)
   parent: AutopoolAccountParent | null
+  position: { positionType: string }  // ← added — needed for position outer card label
   _count: { children: number }
   createdAt: string
 }
@@ -80,7 +83,10 @@ export interface AutopoolIncomingPayment {
   senderAccount: {
     level: number
     accountType: AutopoolAccountType
-    user: { name: string }
+    positionId: string
+    position: {
+      user: { id: string; name: string; mobile: string }
+    }
   }
   createdAt: string
 }
@@ -96,27 +102,24 @@ export interface PaymentModalData {
   receiverBankDetails: BankDetails | null
 }
 
-// ─── Level fee map — mirrors LEVEL_CONFIGS on backend ─────────────────────────
 export const AUTOPOOL_LEVEL_FEES: Record<number, number> = {
   1: 200, 2: 300, 3: 600, 4: 1500, 5: 3000, 6: 6000, 7: 15000,
 }
 
-// ─── Level configs — mirrors LEVEL_CONFIGS on backend ─────────────────────────
 export const AUTOPOOL_LEVEL_CONFIGS: Record<number, {
   entryFee: number
   reentryCount: number
   upgradeAtPayment: number | null
 }> = {
-  1: { entryFee: 200,   reentryCount: 0,  upgradeAtPayment: 2 },
-  2: { entryFee: 300,   reentryCount: 1,  upgradeAtPayment: 2 },
-  3: { entryFee: 600,   reentryCount: 2,  upgradeAtPayment: 3 },
-  4: { entryFee: 1500,  reentryCount: 4,  upgradeAtPayment: 2 },
-  5: { entryFee: 3000,  reentryCount: 8,  upgradeAtPayment: 2 },
-  6: { entryFee: 6000,  reentryCount: 16, upgradeAtPayment: 3 },
+  1: { entryFee: 200, reentryCount: 0, upgradeAtPayment: 2 },
+  2: { entryFee: 300, reentryCount: 1, upgradeAtPayment: 2 },
+  3: { entryFee: 600, reentryCount: 2, upgradeAtPayment: 3 },
+  4: { entryFee: 1500, reentryCount: 4, upgradeAtPayment: 2 },
+  5: { entryFee: 3000, reentryCount: 8, upgradeAtPayment: 2 },
+  6: { entryFee: 6000, reentryCount: 16, upgradeAtPayment: 3 },
   7: { entryFee: 15000, reentryCount: 32, upgradeAtPayment: null },
 }
 
-// ─── API Calls ────────────────────────────────────────────────────────────────
 export const autopoolApi = {
   getPendingLinks: () =>
     api.get<{ success: boolean; data: AutopoolPendingLink[] }>('/autopool/pending-links'),

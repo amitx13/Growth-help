@@ -8,8 +8,6 @@ import {
 import {
     Layers, CheckCircle2, Clock, Lock, RotateCcw,
     ChevronLeft, ChevronRight, RefreshCw,
-    ShieldCheck,
-    User,
     Phone,
 } from 'lucide-react'
 import { toast } from 'sonner'
@@ -103,7 +101,7 @@ export const AutopoolAccountsTab = () => {
                     <Table>
                         <TableHeader>
                             <TableRow className="hover:bg-transparent">
-                                <TableHead>User</TableHead>
+                                <TableHead>Accounts</TableHead>
                                 <TableHead>Level</TableHead>
                                 <TableHead>Type</TableHead>
                                 <TableHead>Tree Pos</TableHead>
@@ -124,24 +122,27 @@ export const AutopoolAccountsTab = () => {
                             ) : paginated.map((a) => (
                                 <TableRow key={a.id} className="hover:bg-muted/30">
                                     <TableCell>
+                                        {/* Position ID — primary identifier */}
                                         <div className="flex items-center gap-2">
-                                            <p className="font-medium text-sm">{a.userId}</p>
-                                            {/* Admin/User role badge */}
-                                            <Badge className={`text-xs border-0 ${a.user.role === 'ADMIN'
-                                                ? 'bg-red-500/15 text-red-700'
-                                                : 'bg-blue-500/15 text-blue-700'
+                                            <p className="font-mono text-xs font-semibold text-foreground">
+                                                {a.positionId.toUpperCase()}
+                                            </p>
+                                            <Badge className={`text-xs border-0 ${a.position.positionType === 'REENTRY'
+                                                ? 'bg-purple-500/15 text-purple-700'
+                                                : 'bg-sky-500/15 text-sky-700'
                                                 }`}>
-                                                {a.user.role === 'ADMIN'
-                                                    ? <><ShieldCheck className="w-3 h-3 inline mr-1" />Admin</>
-                                                    : <><User className="w-3 h-3 inline mr-1" />User</>
-                                                }
+                                                {a.position.positionType}
                                             </Badge>
                                         </div>
-                                        {/* user.id — truncated + monospace */}
-                                        <p className="font-mono text-[10px] text-muted-foreground/70 mt-0.5">{a.user.name}</p>
+                                        {/* Autopool account slot ID — smaller */}
+                                        <p className="font-mono text-[10px] text-muted-foreground/60 mt-0.5">
+                                            acct: {a.id.slice(-6)}
+                                        </p>
+                                        {/* Owner as secondary info */}
+                                        <p className="text-xs font-medium text-muted-foreground mt-1">{a.position.user.name}</p>
                                         <div className="flex items-center gap-1 mt-0.5">
                                             <Phone className="w-3 h-3 text-muted-foreground" />
-                                            <p className="text-xs text-muted-foreground">{a.user.mobile}</p>
+                                            <p className="text-xs text-muted-foreground">{a.position.user.mobile}</p>
                                         </div>
                                     </TableCell>
                                     <TableCell>
@@ -191,18 +192,19 @@ export const AutopoolAccountsTab = () => {
                             <div className="flex items-start justify-between gap-2">
                                 <div>
                                     <div className="flex items-center gap-2">
-                                        <p className="font-semibold text-sm">{a.userId}</p>
-                                        <Badge className={`text-xs border-0 ${a.user.role === 'ADMIN'
-                                            ? 'bg-red-500/15 text-red-700'
-                                            : 'bg-blue-500/15 text-blue-700'
+                                        <p className="font-mono text-xs font-semibold">
+                                            {a.positionId.toUpperCase()}
+                                        </p>
+                                        <Badge className={`text-xs border-0 ${a.position.positionType === 'REENTRY'
+                                                ? 'bg-purple-500/15 text-purple-700'
+                                                : 'bg-sky-500/15 text-sky-700'
                                             }`}>
-                                            {a.user.role === 'ADMIN' ? 'Admin' : 'User'}
+                                            {a.position.positionType}
                                         </Badge>
                                     </div>
-                                    <p className="text-xs text-muted-foreground">{a.user.mobile}</p>
-                                    <p className="font-mono text-[10px] text-muted-foreground/70">{a.user.name}</p>
+                                    <p className="text-xs font-medium text-muted-foreground mt-0.5">{a.position.user.name}</p>
+                                    <p className="text-xs text-muted-foreground">{a.position.user.mobile}</p>
                                 </div>
-
                                 <div className="flex flex-col items-end gap-1">
                                     <Badge className="bg-primary/10 text-primary border-0 text-xs">L{a.level}</Badge>
                                     {a.isActive

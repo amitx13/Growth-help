@@ -11,8 +11,14 @@ export const getAllAutopoolAccounts = async (req: Request, res: Response) => {
   const accounts = await prisma.autopoolAccount.findMany({
     where: level ? { level: parseInt(level as string) } : {},
     include: {
-      user: { select: { id:true, name: true, email: true, mobile: true, role:true } },
-      _count: { select: { children: true, receivedPayments:true } },
+      position: {
+        select: {
+          id: true,
+          positionType: true,
+          user: { select: { id: true, name: true, email: true, mobile: true, role: true } },
+        },
+      },
+      _count: { select: { children: true, receivedPayments: true } },
     },
     orderBy: { treePosition: "asc" },
     skip: (parseInt(page as string) - 1) * parseInt(limit as string),
@@ -37,14 +43,26 @@ export const getAllAutopoolPayments = async (req: Request, res: Response) => {
         select: {
           level: true,
           accountType: true,
-          user: { select: { name: true, mobile: true, id:true } },
+          position: {
+            select: {
+              id: true,
+              positionType: true,
+              user: { select: { id: true, name: true, mobile: true } },
+            },
+          },
         },
       },
       receiverAccount: {
         select: {
           level: true,
           accountType: true,
-          user: { select: { name: true, mobile: true, id:true } },
+          position: {
+            select: {
+              id: true,
+              positionType: true,
+              user: { select: { id: true, name: true, mobile: true } },
+            },
+          },
         },
       },
     },
@@ -60,6 +78,42 @@ export const getAllAutopoolPayments = async (req: Request, res: Response) => {
   res.json({ success: true, data: payments, total });
 };
 
+// GET /admin/autopool/eligible-users
+export const getEligibleUsersForAutopool = async (req: Request, res: Response) => {
+  const { page = "1", limit = "20" } = req.query;
+  const skip = (parseInt(page as string) - 1) * parseInt(limit as string);
+  const take = parseInt(limit as string);
+
+  // directReferralCount is a real field — no JS filtering needed
+  const [positions, total] = await Promise.all([
+    prisma.position.findMany({
+      where: {
+        directReferralCount: { gte: 2 },
+        autopoolPendingLinks: { none: { linkType: "ENTRY" } },
+        user: { role: "USER" },
+      },
+      select: {
+        id: true,
+        positionType: true,
+        directReferralCount: true,
+        user: { select: { id: true, name: true, email: true, mobile: true } },
+      },
+      skip,
+      take,
+      orderBy: { directReferralCount: "desc" },
+    }),
+    prisma.position.count({
+      where: {
+        directReferralCount: { gte: 2 },
+        autopoolPendingLinks: { none: { linkType: "ENTRY" } },
+        user: { role: "USER" },
+      },
+    }),
+  ]);
+
+  res.json({ success: true, data: positions, total, page: parseInt(page as string) });
+};
+
 // POST /admin/autopool/resolve-payment/:paymentId
 export const resolvePaymentHandler = async (req: Request, res: Response) => {
   const { paymentId } = req.params;
@@ -67,19 +121,11 @@ export const resolvePaymentHandler = async (req: Request, res: Response) => {
   const adminUserId = req.userId;
 
   if (!adminUserId || typeof adminUserId !== "string") {
-    const errorResponse: ApiErrorResponse = {
-      success: false,
-      error: "User ID not found.",
-      statusCode: 400,
-    };
-    return res.status(400).json(errorResponse);
+    return res.status(400).json({ success: false, error: "User ID not found.", statusCode: 400 } as ApiErrorResponse);
   }
 
   if (!["APPROVED", "REJECTED"].includes(action)) {
-    res.status(400).json({
-      success: false,
-      message: 'Action must be "APPROVED" or "REJECTED"',
-    });
+    res.status(400).json({ success: false, message: 'Action must be "APPROVED" or "REJECTED"' });
     return;
   }
 
@@ -87,83 +133,35 @@ export const resolvePaymentHandler = async (req: Request, res: Response) => {
   res.json({ success: true, data: result });
 };
 
-// GET /admin/autopool/eligible-users
-export const getEligibleUsersForAutopool = async (req: Request, res: Response) => {
-  const { page = "1", limit = "20" } = req.query;
-  const skip = (parseInt(page as string) - 1) * parseInt(limit as string);
-  const take = parseInt(limit as string);
-
-  // Fetch all candidates — has at least 1 referral, no ENTRY link at all
-  const candidates = await prisma.user.findMany({
-    where: {
-      directReferrals: { some: {} },
-      autopoolEntryLinks: { none: { linkType: "ENTRY" } },
-      role:"USER"
-    },
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      mobile: true,
-      _count: { select: { directReferrals: true } },
-    },
-  });
-
-  // Filter >= 2 in JS (Prisma has no count filter)
-  const eligible = candidates.filter((u) => u._count.directReferrals >= 2);
-
-  // Paginate after filter
-  const paginated = eligible.slice(skip, skip + take);
-
-  res.json({
-    success: true,
-    data: paginated,
-    total: eligible.length,
-    page: parseInt(page as string),
-  });
-};
-
 // POST /admin/autopool/generate-entry-link
 export const generateEntryLinkForUser = async (req: Request, res: Response) => {
-  const { userId } = req.body;
+  const { positionId } = req.body;
 
-  if (!userId || typeof userId !== "string") {
-    res.status(400).json({ success: false, message: "userId is required" });
+  if (!positionId || typeof positionId !== "string") {
+    res.status(400).json({ success: false, message: "positionId is required" });
     return;
   }
 
-  const user = await prisma.user.findUniqueOrThrow({
-    where: { id: userId },
+  const position = await prisma.position.findUniqueOrThrow({
+    where: { id: positionId },
     select: {
       id: true,
-      name: true,
-      directReferrals: { select: { id: true } },
-      autopoolEntryLinks: {
-        where: { linkType: "ENTRY", isCompleted: false },
-        select: { id: true },
-      },
+      directReferralCount: true,
     },
   });
 
-  if (user.directReferrals.length < 2) {
+  if (position.directReferralCount < 2) {
     throw new AutopoolError(
-      "User does not have 2 referrals yet",
+      "Position does not have 2 referrals yet",
       "NOT_ELIGIBLE",
       400
     );
   }
 
-  if (user.autopoolEntryLinks.length > 0) {
-    throw new AutopoolError(
-      "User already has a pending entry link",
-      "LINK_ALREADY_EXISTS",
-      400
-    );
-  }
-
+  // No duplicate check — admin override is intentional
   const link = await prisma.autopoolPendingLink.create({
     data: {
-      userId,
+      positionId,
       linkType: "ENTRY",
       amount: 200,
       isCompleted: false,
@@ -172,3 +170,4 @@ export const generateEntryLinkForUser = async (req: Request, res: Response) => {
 
   res.status(201).json({ success: true, data: link });
 };
+

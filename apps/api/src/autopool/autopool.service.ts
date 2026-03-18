@@ -25,7 +25,7 @@ async function unlockUpgradeSource(
 // ─────────────────────────────────────────────
 // 1. JOIN AUTOPOOL — Level 1
 // ─────────────────────────────────────────────
-export async function joinAutopool(userId: string, pendingLinkId: string) {
+export async function joinAutopool(positionId: string, pendingLinkId: string) {
   const level: AutopoolLevel = 1;
   const config = LEVEL_CONFIGS[level];
 
@@ -36,14 +36,17 @@ export async function joinAutopool(userId: string, pendingLinkId: string) {
     where: { id: bfsSlot.id },
     select: {
       id: true,
-      // mobile added — needed for FE to contact receiver during onboarding
-      user: { select: { name: true, mobile: true, bankDetails: true } },
+      position: {
+        select: {
+          user: { select: { name: true, mobile: true, bankDetails: true } },
+        },
+      },
     },
   });
 
   const newAccount = await prisma.autopoolAccount.create({
     data: {
-      userId,
+      positionId,
       level,
       accountType: AutopoolAccountType.ORIGINAL,
       parentAccountId: bfsSlot.id,
@@ -57,9 +60,9 @@ export async function joinAutopool(userId: string, pendingLinkId: string) {
     pendingLinkId,
     receiverAccountId: receiver.id,
     amount: config.entryFee,
-    receiverBankDetails: receiver.user.bankDetails,
-    receiverName: receiver.user.name,
-    receiverMobile: receiver.user.mobile,
+    receiverBankDetails: receiver.position.user.bankDetails,
+    receiverName: receiver.position.user.name,
+    receiverMobile: receiver.position.user.mobile,
   };
 }
 
@@ -90,12 +93,7 @@ export async function submitAutopoolPayment({
 
   if (existing) {
     if (screenshotUrl) await deleteUploadedFile(screenshotUrl);
-
-    throw new AutopoolError(
-      "A pending payment already exists for this account",
-      "DUPLICATE_PAYMENT",
-      400
-    );
+    throw new AutopoolError("A pending payment already exists for this account", "DUPLICATE_PAYMENT", 400);
   }
 
   return prisma.autopoolPayment.create({
@@ -118,8 +116,20 @@ export async function approveAutopoolPayment(paymentId: string, requestingUserId
   const payment = await prisma.autopoolPayment.findUniqueOrThrow({
     where: { id: paymentId },
     include: {
-      receiverAccount: { select: { id: true, userId: true } },
-      senderAccount: { select: { id: true, userId: true, upgradedFromAccountId: true } },
+      receiverAccount: {
+        select: {
+          id: true,
+          positionId: true,
+          position: { select: { userId: true } },
+        },
+      },
+      senderAccount: {
+        select: {
+          id: true,
+          positionId: true,
+          upgradedFromAccountId: true,
+        },
+      },
     },
   });
 
@@ -127,7 +137,7 @@ export async function approveAutopoolPayment(paymentId: string, requestingUserId
     throw new AutopoolError("Only PENDING payments can be approved by the receiver", "INVALID_STATUS", 400);
   }
 
-  if (payment.receiverAccount.userId !== requestingUserId) {
+  if (payment.receiverAccount.position.userId !== requestingUserId) {
     throw new AutopoolError("You are not authorized to approve this payment", "UNAUTHORIZED", 403);
   }
 
@@ -141,7 +151,11 @@ export async function approveAutopoolPayment(paymentId: string, requestingUserId
 
     if (payment.paymentType === "ENTRY") {
       await tx.autopoolPendingLink.updateMany({
-        where: { userId: payment.senderAccount.userId, linkType: "ENTRY", isCompleted: false },
+        where: {
+          positionId: payment.senderAccount.positionId,
+          linkType: "ENTRY",
+          isCompleted: false,
+        },
         data: { isCompleted: true },
       });
     }
@@ -159,14 +173,18 @@ export async function approveAutopoolPayment(paymentId: string, requestingUserId
 export async function markPaymentUnderReview(paymentId: string, requestingUserId: string) {
   const payment = await prisma.autopoolPayment.findUniqueOrThrow({
     where: { id: paymentId },
-    include: { receiverAccount: { select: { userId: true } } },
+    include: {
+      receiverAccount: {
+        select: { position: { select: { userId: true } } },
+      },
+    },
   });
 
   if (payment.status !== "PENDING") {
     throw new AutopoolError("Only PENDING payments can be marked as under review", "INVALID_STATUS", 400);
   }
 
-  if (payment.receiverAccount.userId !== requestingUserId) {
+  if (payment.receiverAccount.position.userId !== requestingUserId) {
     throw new AutopoolError("You are not authorized to review this payment", "UNAUTHORIZED", 403);
   }
 
@@ -191,25 +209,29 @@ export async function adminResolvePayment(
   const payment = await prisma.autopoolPayment.findUniqueOrThrow({
     where: { id: paymentId },
     include: {
-      receiverAccount: { select: { id: true, userId: true } },
-      senderAccount: { select: { id: true, userId: true, upgradedFromAccountId: true } },
+      receiverAccount: {
+        select: {
+          id: true,
+          positionId: true,
+          position: { select: { userId: true } },
+        },
+      },
+      senderAccount: {
+        select: {
+          id: true,
+          positionId: true,
+          upgradedFromAccountId: true,
+        },
+      },
     },
   });
 
-  // Admin can now intervene on both PENDING and UNDER_REVIEW
   if (!["PENDING", "UNDER_REVIEW"].includes(payment.status)) {
-    throw new AutopoolError(
-      "Admin can only resolve PENDING or UNDER_REVIEW payments",
-      "INVALID_STATUS",
-      400
-    );
+    throw new AutopoolError("Admin can only resolve PENDING or UNDER_REVIEW payments", "INVALID_STATUS", 400);
   }
 
   await prisma.$transaction(async (tx) => {
-    await tx.autopoolPayment.update({
-      where: { id: paymentId },
-      data: { status: action },
-    });
+    await tx.autopoolPayment.update({ where: { id: paymentId }, data: { status: action } });
 
     if (action === "APPROVED") {
       await tx.autopoolAccount.update({
@@ -220,7 +242,7 @@ export async function adminResolvePayment(
       if (payment.paymentType === "ENTRY") {
         await tx.autopoolPendingLink.updateMany({
           where: {
-            userId: payment.senderAccount.userId,
+            positionId: payment.senderAccount.positionId,
             linkType: "ENTRY",
             isCompleted: false,
           },
@@ -235,4 +257,3 @@ export async function adminResolvePayment(
 
   return { success: true };
 }
-

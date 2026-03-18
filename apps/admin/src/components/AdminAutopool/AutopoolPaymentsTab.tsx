@@ -107,6 +107,8 @@ export const AutopoolPaymentsTab = () => {
         )
     }
 
+    console.log("payments",payments)
+
     return (
         <>
             {/* Stats */}
@@ -204,25 +206,39 @@ export const AutopoolPaymentsTab = () => {
                                     ) : paginated.map((p) => (
                                         <TableRow key={p.id} className="hover:bg-muted/30">
                                             <TableCell>
-                                                <p className="font-medium text-sm">{p.senderAccount.user.name}</p>
-                                                <div className="flex items-center gap-1 mt-0.5">
-                                                    <User className="w-3 h-3 text-muted-foreground" />
-                                                    <p className="text-xs text-muted-foreground">{p.senderAccount.user.id}</p>
+                                                <div className="flex items-center gap-1.5">
+                                                    <p className="font-mono text-xs font-semibold text-foreground">
+                                                        {p.senderAccount.position.id.toUpperCase()}
+                                                    </p>
+                                                    <Badge className={`text-[10px] border-0 px-1.5 ${p.senderAccount.position.positionType === 'REENTRY'
+                                                        ? 'bg-purple-500/15 text-purple-700'
+                                                        : 'bg-sky-500/15 text-sky-700'
+                                                        }`}>
+                                                        {p.senderAccount.position.positionType}
+                                                    </Badge>
                                                 </div>
+                                                <p className="text-xs font-medium mt-0.5">{p.senderAccount.position.user.name}</p>
                                                 <div className="flex items-center gap-1 mt-0.5">
                                                     <Phone className="w-3 h-3 text-muted-foreground" />
-                                                    <p className="text-xs text-muted-foreground">{p.senderAccount.user.mobile}</p>
+                                                    <p className="text-xs text-muted-foreground">{p.senderAccount.position.user.mobile}</p>
                                                 </div>
                                             </TableCell>
                                             <TableCell>
-                                                <p className="font-medium text-sm">{p.receiverAccount.user.name}</p>
-                                                <div className="flex items-center gap-1 mt-0.5">
-                                                    <User className="w-3 h-3 text-muted-foreground" />
-                                                    <p className="text-xs text-muted-foreground">{p.receiverAccount.user.id}</p>
+                                                <div className="flex items-center gap-1.5">
+                                                    <p className="font-mono text-xs font-semibold text-foreground">
+                                                        {p.receiverAccount.position.id.toUpperCase()}
+                                                    </p>
+                                                    <Badge className={`text-[10px] border-0 px-1.5 ${p.receiverAccount.position.positionType === 'REENTRY'
+                                                        ? 'bg-purple-500/15 text-purple-700'
+                                                        : 'bg-sky-500/15 text-sky-700'
+                                                        }`}>
+                                                        {p.receiverAccount.position.positionType}
+                                                    </Badge>
                                                 </div>
+                                                <p className="text-xs font-medium mt-0.5">{p.receiverAccount.position.user.name}</p>
                                                 <div className="flex items-center gap-1 mt-0.5">
                                                     <Phone className="w-3 h-3 text-muted-foreground" />
-                                                    <p className="text-xs text-muted-foreground">{p.receiverAccount.user.mobile}</p>
+                                                    <p className="text-xs text-muted-foreground">{p.receiverAccount.position.user.mobile}</p>
                                                 </div>
                                             </TableCell>
 
@@ -285,28 +301,28 @@ export const AutopoolPaymentsTab = () => {
                                         <div className="flex items-start gap-2">
                                             <ArrowUpRight className="w-3.5 h-3.5 text-red-500 flex-shrink-0 mt-0.5" />
                                             <div>
-                                                <p className="text-sm font-medium">{p.senderAccount.user.name}</p>
+                                                <p className="text-sm font-medium">{p.senderAccount.position.user.name}</p>
                                                 <div className="flex items-center gap-1">
                                                     <User className="w-3 h-3 text-muted-foreground" />
-                                                    <p className="text-[10px] font-mono text-muted-foreground/70">{p.senderAccount.user.id}</p>
+                                                    <p className="text-[10px] font-mono text-muted-foreground/70">{p.senderAccount.position.user.id}</p>
                                                 </div>
                                                 <div className="flex items-center gap-1">
                                                     <Phone className="w-3 h-3 text-muted-foreground" />
-                                                    <p className="text-xs text-muted-foreground">{p.senderAccount.user.mobile}</p>
+                                                    <p className="text-xs text-muted-foreground">{p.senderAccount.position.user.mobile}</p>
                                                 </div>
                                             </div>
                                         </div>
                                         <div className="flex items-start gap-2">
                                             <ArrowDownLeft className="w-3.5 h-3.5 text-green-500 flex-shrink-0 mt-0.5" />
                                             <div>
-                                                <p className="text-sm font-medium">{p.receiverAccount.user.name}</p>
+                                                <p className="text-sm font-medium">{p.receiverAccount.position.user.name}</p>
                                                 <div className="flex items-center gap-1">
                                                     <User className="w-3 h-3 text-muted-foreground" />
-                                                    <p className="text-[10px] font-mono text-muted-foreground/70">{p.receiverAccount.user.id}</p>
+                                                    <p className="text-[10px] font-mono text-muted-foreground/70">{p.receiverAccount.position.user.id}</p>
                                                 </div>
                                                 <div className="flex items-center gap-1">
                                                     <Phone className="w-3 h-3 text-muted-foreground" />
-                                                    <p className="text-xs text-muted-foreground">{p.receiverAccount.user.mobile}</p>
+                                                    <p className="text-xs text-muted-foreground">{p.receiverAccount.position.user.mobile}</p>
                                                 </div>
                                             </div>
                                         </div>
@@ -390,18 +406,27 @@ export const AutopoolPaymentsTab = () => {
                                     </p>
                                     <div>
                                         <p className="text-xs text-muted-foreground">Name</p>
-                                        <p className="font-semibold text-sm">{selectedPayment.senderAccount.user.name}</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-xs text-muted-foreground">User ID</p>
-                                        <p className="font-semibold text-sm">{selectedPayment.senderAccount.user.id}</p>
+                                        <p className="font-semibold text-sm">{selectedPayment.senderAccount.position.user.name}</p>
                                     </div>
                                     <div>
                                         <p className="text-xs text-muted-foreground">Account ID</p>
-                                        <p className="font-mono text-xs break-all">{selectedPayment.senderAccountId}</p>
+                                        <p className="font-mono text-xs break-all">{selectedPayment.senderAccount.position.id}</p>
                                     </div>
                                     <div>
                                         <p className="text-xs text-muted-foreground">Account Type</p>
+                                        <Badge className={`text-xs border-0 ${selectedPayment.senderAccount.position.positionType === 'REENTRY'
+                                            ? 'bg-purple-500/15 text-purple-700'
+                                            : 'bg-sky-500/15 text-sky-700'
+                                            }`}>
+                                            {selectedPayment.senderAccount.position.positionType}
+                                        </Badge>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-muted-foreground">Autopool ID</p>
+                                        <p className="font-mono text-xs break-all">{selectedPayment.senderAccountId.slice(0,8)}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-muted-foreground">Autopool Type</p>
                                         <Badge className="text-xs bg-primary/10 text-primary border-0">
                                             L{selectedPayment.senderAccount.level} · {selectedPayment.senderAccount.accountType}
                                         </Badge>
@@ -413,18 +438,27 @@ export const AutopoolPaymentsTab = () => {
                                     </p>
                                     <div>
                                         <p className="text-xs text-muted-foreground">Name</p>
-                                        <p className="font-semibold text-sm">{selectedPayment.receiverAccount.user.name}</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-xs text-muted-foreground">User ID</p>
-                                        <p className="font-semibold text-sm">{selectedPayment.receiverAccount.user.id}</p>
+                                        <p className="font-semibold text-sm">{selectedPayment.receiverAccount.position.user.name}</p>
                                     </div>
                                     <div>
                                         <p className="text-xs text-muted-foreground">Account ID</p>
-                                        <p className="font-mono text-xs break-all">{selectedPayment.receiverAccountId}</p>
+                                        <p className="font-mono text-xs break-all">{selectedPayment.receiverAccount.position.id}</p>
                                     </div>
                                     <div>
                                         <p className="text-xs text-muted-foreground">Account Type</p>
+                                        <Badge className={`text-xs border-0 ${selectedPayment.receiverAccount.position.positionType === 'REENTRY'
+                                                ? 'bg-purple-500/15 text-purple-700'
+                                                : 'bg-sky-500/15 text-sky-700'
+                                            }`}>
+                                            {selectedPayment.receiverAccount.position.positionType}
+                                        </Badge>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-muted-foreground">Autopool ID</p>
+                                        <p className="font-mono text-xs break-all">{selectedPayment.receiverAccountId.slice(0,8)}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-muted-foreground">Autopool Type</p>
                                         <Badge className="text-xs bg-primary/10 text-primary border-0">
                                             L{selectedPayment.receiverAccount.level} · {selectedPayment.receiverAccount.accountType}
                                         </Badge>
@@ -486,7 +520,7 @@ export const AutopoolPaymentsTab = () => {
                 title={confirmAction === 'APPROVED' ? 'Approve this payment?' : 'Reject this payment?'}
                 description={
                     confirmPayment
-                        ? `₹${confirmPayment.amount} payment from ${confirmPayment.senderAccount.user.name} → ${confirmPayment.receiverAccount.user.name}`
+                        ? `₹${confirmPayment.amount} payment from ${confirmPayment.senderAccount.position.user.name} → ${confirmPayment.receiverAccount.position.user.name}`
                         : ''
                 }
                 onCancel={() => { setConfirmPayment(null); setConfirmOpen(false) }}

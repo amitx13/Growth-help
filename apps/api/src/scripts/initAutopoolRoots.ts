@@ -29,12 +29,12 @@ async function seedLevelConfigs() {
   }
 }
 
-async function seedAdminRootAccounts(adminUserId: string) {
+async function seedAdminRootAccounts(adminPositionId: string) {
   console.log("\n🌳 Seeding Admin Root Accounts...");
 
   for (const config of LEVEL_CONFIGS) {
     const existing = await prisma.autopoolAccount.findFirst({
-      where: { userId: adminUserId, level: config.level },
+      where: { positionId: adminPositionId, level: config.level },
     });
 
     if (existing) {
@@ -44,12 +44,12 @@ async function seedAdminRootAccounts(adminUserId: string) {
 
     await prisma.autopoolAccount.create({
       data: {
-        userId: adminUserId,
+        positionId: adminPositionId,
         level: config.level,
         accountType: "ORIGINAL",
-        parentAccountId: null,      // root — no parent
-        treePosition: 1,            // always first in tree
-        isActive: true,             // ONLY exception — no payment required
+        parentAccountId: null,
+        treePosition: 1,
+        isActive: true,
         isUpgradeLocked: false,
         paymentsReceived: 0,
         reentriesCreated: 0,
@@ -64,16 +64,18 @@ async function seedAdminRootAccounts(adminUserId: string) {
 async function main() {
   console.log("🚀 Starting Autopool Initialization...");
 
-  const { userId: adminUserId } = await getAdminSystemIds();
+  // accountId from getAdminSystemIds is the admin's position id
+  const { userId: adminUserId, accountId: adminPositionId } = await getAdminSystemIds();
 
-  if (!adminUserId) {
-    throw new Error("❌ Admin user ID not found. Make sure admin exists in the database first.");
+  if (!adminUserId || !adminPositionId) {
+    throw new Error("❌ Admin user or position not found. Make sure admin is seeded first.");
   }
 
   console.log(`\n👤 Admin userId: ${adminUserId}`);
+  console.log(`📍 Admin positionId: ${adminPositionId}`);
 
   await seedLevelConfigs();
-  await seedAdminRootAccounts(adminUserId);
+  await seedAdminRootAccounts(adminPositionId);
 
   console.log("\n✅ Autopool initialization complete!\n");
 }

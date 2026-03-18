@@ -980,7 +980,7 @@ export const activateUserAccount = async (req: Request, res: Response) => {
 
             const existingEntryLink = await tx.autopoolPendingLink.findFirst({
               where: {
-                userId: sponsorPosition.userId,
+                positionId: sponsorPosition.id,
                 linkType: 'ENTRY',
                 isCompleted: false,
               }
@@ -989,7 +989,7 @@ export const activateUserAccount = async (req: Request, res: Response) => {
             if (!existingEntryLink) {
               await tx.autopoolPendingLink.create({
                 data: {
-                  userId: sponsorPosition.userId,
+                  positionId: sponsorPosition.id,
                   linkType: 'ENTRY',
                   amount: 200,
                   isCompleted: false,

@@ -56,10 +56,8 @@ model User {
   ownedPins Pin[] @relation("ownedPins")
   usedPins  Pin[] @relation("usedPins")
 
-  sentPinRequests     PinRequest[]          @relation("pinReqFrom")
-  receivedPinRequests PinRequest[]          @relation("pinReqTo")
-  AutopoolAccount     AutopoolAccount[]
-  autopoolEntryLinks  AutopoolPendingLink[]
+  sentPinRequests     PinRequest[] @relation("pinReqFrom")
+  receivedPinRequests PinRequest[] @relation("pinReqTo")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -113,6 +111,9 @@ model Position {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  autopoolAccounts     AutopoolAccount[]     @relation("positionAutopoolAccounts")
+  autopoolPendingLinks AutopoolPendingLink[] @relation("positionAutopoolEntryLinks")
 
   @@index([userId])
   @@index([placedUnderPositionId])
@@ -301,27 +302,23 @@ model AutopoolLevelConfig {
 // One record per account (original or re-entry) per user
 model AutopoolAccount {
   id          String              @id @default(cuid())
-  userId      String
+  positionId  String
   level       Int
   accountType AutopoolAccountType @default(ORIGINAL)
 
-  // BFS tree structure
-  parentAccountId String?
-  treePosition    Int
-
-  // Upgrade tracking (self-referencing, optional — Level 1 originals won't have this)
+  parentAccountId       String?
+  treePosition          Int
   upgradedFromAccountId String?
-  upgradedFromAccount   AutopoolAccount?  @relation("AutopoolUpgrade", fields: [upgradedFromAccountId], references: [id], onDelete: SetNull)
-  upgradedToAccounts    AutopoolAccount[] @relation("AutopoolUpgrade")
 
-  // State tracking
+  upgradedFromAccount AutopoolAccount?  @relation("AutopoolUpgrade", fields: [upgradedFromAccountId], references: [id], onDelete: SetNull)
+  upgradedToAccounts  AutopoolAccount[] @relation("AutopoolUpgrade")
+
   paymentsReceived Int     @default(0)
-  isActive         Boolean @default(false) // true after entry payment approved
-  isUpgradeLocked  Boolean @default(false) // true after upgrade link generated → slot frozen in BFS
+  isActive         Boolean @default(false)
+  isUpgradeLocked  Boolean @default(false)
   reentriesCreated Int     @default(0)
 
-  // Relations
-  user     User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  position Position          @relation("positionAutopoolAccounts", fields: [positionId], references: [id], onDelete: Cascade)
   parent   AutopoolAccount?  @relation("AutopoolTree", fields: [parentAccountId], references: [id], onDelete: SetNull)
   children AutopoolAccount[] @relation("AutopoolTree")
 
@@ -333,7 +330,7 @@ model AutopoolAccount {
   updatedAt DateTime @updatedAt
 
   @@unique([level, treePosition])
-  @@index([userId])
+  @@index([positionId])
   @@index([level])
   @@index([parentAccountId])
   @@index([upgradedFromAccountId])
@@ -369,29 +366,27 @@ model AutopoolPayment {
 }
 
 model AutopoolPendingLink {
-  id        String  @id @default(cuid())
-  accountId String? // null for ENTRY links
-  userId    String? // set only for ENTRY links
+  id         String  @id @default(cuid())
+  accountId  String?
+  positionId String?
 
   linkType AutopoolLinkType
 
-  // UPGRADE fields
   targetLevel Int?
   amount      Int?
 
-  // REENTRY fields
   reentryCount    Int?
   reentriesIssued Int  @default(0)
 
   isCompleted Boolean @default(false)
 
-  account AutopoolAccount? @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  user    User?            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  account  AutopoolAccount? @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  position Position?        @relation("positionAutopoolEntryLinks", fields: [positionId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
 
   @@index([accountId])
-  @@index([userId])
+  @@index([positionId])
   @@index([linkType])
   @@index([isCompleted])
   @@map("autopool_pending_links")

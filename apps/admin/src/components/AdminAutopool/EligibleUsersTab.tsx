@@ -7,13 +7,13 @@ import {
 } from '@repo/ui'
 import { Users, Zap, RefreshCw, CheckCircle2 } from 'lucide-react'
 import { toast } from 'sonner'
-import { autopoolAdminApi, type EligibleUser } from '../../lib/autopoolAdminApi'
+import { autopoolAdminApi, type EligiblePosition } from '../../lib/autopoolAdminApi'
 
 export const EligibleUsersTab = () => {
-    const [users, setUsers] = useState<EligibleUser[]>([])
+    const [users, setUsers] = useState<EligiblePosition[]>([])
     const [loading, setLoading] = useState(true)
     const [generatingId, setGeneratingId] = useState<string | null>(null)
-    const [confirmUser, setConfirmUser] = useState<EligibleUser | null>(null)
+    const [confirmUser, setConfirmUser] = useState<EligiblePosition | null>(null)
 
     const load = useCallback(async () => {
         setLoading(true)
@@ -36,9 +36,10 @@ export const EligibleUsersTab = () => {
             await autopoolAdminApi.generateEntryLink(confirmUser.id)
             toast.success(
                 <div className="text-green-600">
-                    Entry link generated for {confirmUser.name}!
+                    Entry link generated for {confirmUser.user.name}!
                 </div>
             )
+            // Remove from list after generating — no pending link means they won't show again on refresh
             setUsers((prev) => prev.filter((u) => u.id !== confirmUser.id))
         } catch (error: any) {
             toast.error(<div className="text-red-500">{error.response?.data?.error || error.message}</div>)
@@ -63,9 +64,9 @@ export const EligibleUsersTab = () => {
                         <Users className="w-5 h-5 text-violet-600" />
                     </div>
                     <div>
-                        <h2 className="text-base font-semibold">Eligible Users</h2>
+                        <h2 className="text-base font-semibold">Eligible Positions</h2>
                         <p className="text-xs text-muted-foreground">
-                            {users.length} user{users.length !== 1 ? 's' : ''} with 2+ referrals and no entry link yet
+                            {users.length} position{users.length !== 1 ? 's' : ''} with 2+ referrals and no entry link yet
                         </p>
                     </div>
                 </div>
@@ -97,21 +98,21 @@ export const EligibleUsersTab = () => {
                                         </div>
                                         <p className="font-semibold text-sm">All caught up!</p>
                                         <p className="text-xs text-muted-foreground mt-1">
-                                            No eligible users without an entry link.
+                                            No eligible positions without an entry link.
                                         </p>
                                     </TableCell>
                                 </TableRow>
                             ) : users.map((u) => (
                                 <TableRow key={u.id} className="hover:bg-muted/30">
                                     <TableCell>
-                                        <p className="font-semibold text-sm">{u.name}</p>
+                                        <p className="font-semibold text-sm">{u.user.name}</p>
                                         <p className="font-mono text-xs text-muted-foreground">{u.id}</p>
                                     </TableCell>
-                                    <TableCell className="text-sm text-muted-foreground">{u.email}</TableCell>
-                                    <TableCell className="text-sm">{u.mobile}</TableCell>
+                                    <TableCell className="text-sm text-muted-foreground">{u.user.email}</TableCell>
+                                    <TableCell className="text-sm">{u.user.mobile}</TableCell>
                                     <TableCell className="text-center">
                                         <Badge className="bg-green-500/20 text-green-700 border-0">
-                                            {u._count.directReferrals} referrals
+                                            {u.directReferralCount} referrals
                                         </Badge>
                                     </TableCell>
                                     <TableCell className="text-right">
@@ -137,19 +138,27 @@ export const EligibleUsersTab = () => {
                         <div className="text-center py-16 px-4">
                             <CheckCircle2 className="w-10 h-10 text-green-600 mx-auto mb-2" />
                             <p className="text-sm font-semibold">All caught up!</p>
-                            <p className="text-xs text-muted-foreground mt-1">No eligible users without an entry link.</p>
+                            <p className="text-xs text-muted-foreground mt-1">No eligible positions without an entry link.</p>
                         </div>
                     ) : users.map((u) => (
                         <div key={u.id} className="p-4 space-y-3">
                             <div className="flex items-start justify-between gap-2">
                                 <div>
-                                    <p className="font-semibold text-sm">{u.name}</p>
-                                    <p className="font-semibold text-sm">{u.id}</p>
-                                    <p className="text-xs text-muted-foreground">{u.email}</p>
-                                    <p className="text-xs text-muted-foreground">{u.mobile}</p>
+                                    <p className="font-semibold text-sm">{u.user.name}</p>
+                                    <div className="flex items-center gap-1.5 mt-0.5">
+                                        <p className="font-mono text-xs text-muted-foreground">{u.id.toUpperCase()}</p>
+                                        <Badge className={`text-[10px] border-0 px-1.5 ${u.positionType === 'REENTRY'
+                                                ? 'bg-purple-500/15 text-purple-700'
+                                                : 'bg-sky-500/15 text-sky-700'
+                                            }`}>
+                                            {u.positionType}
+                                        </Badge>
+                                    </div>
+                                    <p className="text-xs text-muted-foreground">{u.user.email}</p>
+                                    <p className="text-xs text-muted-foreground">{u.user.mobile}</p>
                                 </div>
                                 <Badge className="bg-green-500/20 text-green-700 border-0 flex-shrink-0">
-                                    {u._count.directReferrals} refs
+                                    {u.directReferralCount} refs
                                 </Badge>
                             </div>
                             <Button
@@ -171,7 +180,7 @@ export const EligibleUsersTab = () => {
                 title="Generate autopool entry link?"
                 description={
                     confirmUser
-                        ? `This will create an entry link for ${confirmUser.name} (${confirmUser._count.directReferrals} referrals). They'll be able to join Level 1 autopool.`
+                        ? `This will create an entry link for ${confirmUser.user.name} (${confirmUser.directReferralCount} referrals). They'll be able to join Level 1 autopool.`
                         : ''
                 }
                 onCancel={() => setConfirmUser(null)}

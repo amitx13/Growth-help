@@ -27,7 +27,7 @@ export const AdminAutopoolPage = () => {
                     </TabsTrigger>
                     <TabsTrigger value="eligible" className="gap-1.5">
                         <Users className="w-4 h-4" />
-                        Eligible Users
+                        Eligible Accounts
                     </TabsTrigger>
                 </TabsList>
 

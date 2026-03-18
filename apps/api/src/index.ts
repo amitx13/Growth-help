@@ -15,6 +15,8 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 const allowedOrigins = [
+  // 'http://localhost:5173',
+  // 'http://localhost:5174',
   'https://update.growthhelp.in',
   // 'https://www.growthhelp.in',
   'https://admin.growthhelp.in',

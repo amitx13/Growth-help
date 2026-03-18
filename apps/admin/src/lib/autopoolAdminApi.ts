@@ -3,6 +3,24 @@ import api from './axios'
 export type AutopoolPaymentStatus = 'PENDING' | 'APPROVED' | 'UNDER_REVIEW' | 'REJECTED'
 export type AutopoolPaymentType = 'ENTRY' | 'UPGRADE'
 export type AutopoolAccountType = 'ORIGINAL' | 'REENTRY'
+export interface AdminAutopoolAccount {
+  id: string
+  positionId: string
+  level: number
+  accountType: AutopoolAccountType
+  treePosition: number
+  paymentsReceived: number
+  isActive: boolean
+  isUpgradeLocked: boolean
+  reentriesCreated: number
+  createdAt: string
+  position: {
+    id: string
+    positionType: 'ORIGINAL' | 'REENTRY'
+    user: { id: string; name: string; mobile: string; role: string }
+  }
+  _count: { children: number; receivedPayments: number }
+}
 
 export interface AdminAutopoolPayment {
   id: string
@@ -17,36 +35,29 @@ export interface AdminAutopoolPayment {
   senderAccount: {
     level: number
     accountType: AutopoolAccountType
-    user: { name: string; mobile: string; id:string  }
+    position: {
+      id: string
+      positionType: 'ORIGINAL' | 'REENTRY'
+      user: { name: string; mobile: string; id: string }
+    }
   }
   receiverAccount: {
     level: number
     accountType: AutopoolAccountType
-    user: { name: string; mobile: string; id:string  }
+    position: {
+      id: string
+      positionType: 'ORIGINAL' | 'REENTRY'
+      user: { name: string; mobile: string; id: string }
+    }
   }
 }
 
-export interface AdminAutopoolAccount {
-  id: string
-  userId: string
-  level: number
-  accountType: AutopoolAccountType
-  treePosition: number
-  paymentsReceived: number
-  isActive: boolean
-  isUpgradeLocked: boolean
-  reentriesCreated: number
-  createdAt: string
-  user: { name: string; email: string; mobile: string; role: string }
-  _count: { children: number; receivedPayments: number }
-}
-
-export interface EligibleUser {
-  id: string
-  name: string
-  email: string
-  mobile: string
-  _count: { directReferrals: number }
+// Backend now returns Position rows, not User rows
+export interface EligiblePosition {
+  id: string                             // positionId
+  positionType: string
+  directReferralCount: number            // ← was _count.directReferrals
+  user: { id: string; name: string; email: string; mobile: string }
 }
 
 export const autopoolAdminApi = {
@@ -63,7 +74,7 @@ export const autopoolAdminApi = {
     ),
 
   getEligibleUsers: (page = 1, limit = 50) =>
-    api.get<{ success: boolean; data: EligibleUser[]; total: number }>(
+    api.get<{ success: boolean; data: EligiblePosition[]; total: number }>(
       `/autopool/eligible-users`,
       { params: { page, limit } }
     ),
@@ -71,6 +82,6 @@ export const autopoolAdminApi = {
   resolvePayment: (paymentId: string, action: 'APPROVED' | 'REJECTED') =>
     api.post(`/autopool/resolve-payment/${paymentId}`, { action }),
 
-  generateEntryLink: (userId: string) =>
-    api.post(`/autopool/generate-entry-link`, { userId }),
+  generateEntryLink: (positionId: string) =>      // ← was userId
+    api.post(`/autopool/generate-entry-link`, { positionId }),
 }

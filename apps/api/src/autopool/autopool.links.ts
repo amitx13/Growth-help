@@ -8,13 +8,21 @@ import { AutopoolError, LEVEL_CONFIGS, type AutopoolLevel } from "./autopool.typ
 export async function actOnUpgradeLink(pendingLinkId: string, userId: string) {
   const link = await prisma.autopoolPendingLink.findUniqueOrThrow({
     where: { id: pendingLinkId },
-    include: { account: { select: { id: true, userId: true } } },
+    include: {
+      account: {
+        select: {
+          id: true,
+          positionId: true,
+          position: { select: { userId: true } },
+        },
+      },
+    },
   });
 
   if (!link.account) {
     throw new AutopoolError("Invalid link — no account associated", "INVALID_LINK", 400);
   }
-  if (link.account.userId !== userId) {
+  if (link.account.position.userId !== userId) {
     throw new AutopoolError("This upgrade link does not belong to you", "UNAUTHORIZED", 403);
   }
   if (link.linkType !== "UPGRADE") {
@@ -32,7 +40,7 @@ export async function actOnUpgradeLink(pendingLinkId: string, userId: string) {
 
   const newAccount = await prisma.autopoolAccount.create({
     data: {
-      userId,
+      positionId: link.account.positionId,
       level: targetLevel,
       accountType: AutopoolAccountType.ORIGINAL,
       parentAccountId: bfsSlot.id,
@@ -51,7 +59,11 @@ export async function actOnUpgradeLink(pendingLinkId: string, userId: string) {
     where: { id: bfsSlot.id },
     select: {
       id: true,
-      user: { select: { name: true, mobile: true, bankDetails: true } },
+      position: {
+        select: {
+          user: { select: { name: true, mobile: true, bankDetails: true } },
+        },
+      },
     },
   });
 
@@ -60,9 +72,9 @@ export async function actOnUpgradeLink(pendingLinkId: string, userId: string) {
     receiverAccountId: bfsSlot.id,
     amount: config.entryFee,
     targetLevel,
-    receiverName: receiver.user.name,
-    receiverMobile: receiver.user.mobile,
-    receiverBankDetails: receiver.user.bankDetails,
+    receiverName: receiver.position.user.name,
+    receiverMobile: receiver.position.user.mobile,
+    receiverBankDetails: receiver.position.user.bankDetails,
   };
 }
 
@@ -72,13 +84,21 @@ export async function actOnUpgradeLink(pendingLinkId: string, userId: string) {
 export async function actOnReentryLink(pendingLinkId: string, userId: string) {
   const link = await prisma.autopoolPendingLink.findUniqueOrThrow({
     where: { id: pendingLinkId },
-    include: { account: { select: { id: true, userId: true } } },
+    include: {
+      account: {
+        select: {
+          id: true,
+          positionId: true,
+          position: { select: { userId: true } },
+        },
+      },
+    },
   });
 
   if (!link.account) {
     throw new AutopoolError("Invalid link — no account associated", "INVALID_LINK", 400);
   }
-  if (link.account.userId !== userId) {
+  if (link.account.position.userId !== userId) {
     throw new AutopoolError("This re-entry link does not belong to you", "UNAUTHORIZED", 403);
   }
   if (link.linkType !== "REENTRY") {
@@ -97,9 +117,10 @@ export async function actOnReentryLink(pendingLinkId: string, userId: string) {
   const bfsSlot = await findBFSSlot(level);
   const treePosition = await getNextTreePosition(level);
 
+  // Re-entry account belongs to same position as the triggering account
   const reentryAccount = await prisma.autopoolAccount.create({
     data: {
-      userId,
+      positionId: link.account.positionId,
       level,
       accountType: AutopoolAccountType.REENTRY,
       parentAccountId: bfsSlot.id,
@@ -126,7 +147,11 @@ export async function actOnReentryLink(pendingLinkId: string, userId: string) {
     where: { id: bfsSlot.id },
     select: {
       id: true,
-      user: { select: { name: true, mobile: true, bankDetails: true } },
+      position: {
+        select: {
+          user: { select: { name: true, mobile: true, bankDetails: true } },
+        },
+      },
     },
   });
 
@@ -134,8 +159,8 @@ export async function actOnReentryLink(pendingLinkId: string, userId: string) {
     newAccountId: reentryAccount.id,
     receiverAccountId: bfsSlot.id,
     amount: config.entryFee,
-    receiverName: receiver.user.name,
-    receiverMobile: receiver.user.mobile,
-    receiverBankDetails: receiver.user.bankDetails,
+    receiverName: receiver.position.user.name,
+    receiverMobile: receiver.position.user.mobile,
+    receiverBankDetails: receiver.position.user.bankDetails,
   };
 }

@@ -16,36 +16,34 @@ export const getMyAutopoolAccounts = async (req: Request, res: Response) => {
   const userId = req.userId;
 
   if (!userId || typeof userId !== "string") {
-    return res.status(400).json({
-      success: false,
-      error: "User ID not found.",
-      statusCode: 400,
-    } as ApiErrorResponse);
+    return res.status(400).json({ success: false, error: "User ID not found.", statusCode: 400 } as ApiErrorResponse);
   }
 
   const accounts = await prisma.autopoolAccount.findMany({
-    where: { userId },
+    where: { position: { userId } },
     include: {
+      position: {                              // ← added
+        select: { positionType: true },
+      },
       pendingLinks: { where: { isCompleted: false } },
-
-      // All sent payments — FE filters by status for dead-end detection + earnings
       sentPayments: {
         select: { id: true, status: true, amount: true },
       },
-
-      // Approved received payments — for earnings
       receivedPayments: {
         where: { status: "APPROVED" },
         select: { amount: true },
       },
-
       parent: {
         select: {
           id: true,
-          user: { select: { name: true, mobile: true, bankDetails: true } },
+          position: {
+            select: {
+              positionType: true,              // ← added — needed by AutopoolAccountParent type
+              user: { select: { name: true, mobile: true, bankDetails: true } },
+            },
+          },
         },
       },
-
       _count: { select: { children: true } },
     },
     orderBy: { createdAt: "desc" },
@@ -54,7 +52,7 @@ export const getMyAutopoolAccounts = async (req: Request, res: Response) => {
   res.json({ success: true, data: accounts });
 };
 
-// GET /autopool/incoming-payments
+// GET /autopool/incoming-payments — no change needed, already correct
 export const getIncomingAutopoolPayments = async (req: Request, res: Response) => {
   const userId = req.userId;
 
@@ -64,7 +62,7 @@ export const getIncomingAutopoolPayments = async (req: Request, res: Response) =
 
   const payments = await prisma.autopoolPayment.findMany({
     where: {
-      receiverAccount: { userId },
+      receiverAccount: { position: { userId } },
       status: { in: ["PENDING", "UNDER_REVIEW"] },
     },
     include: {
@@ -72,7 +70,8 @@ export const getIncomingAutopoolPayments = async (req: Request, res: Response) =
         select: {
           level: true,
           accountType: true,
-          user: { select: { name: true } },
+          positionId: true,
+          position: { select: { user: { select: {id:true, name: true, mobile: true } } } },
         },
       },
     },
@@ -82,7 +81,7 @@ export const getIncomingAutopoolPayments = async (req: Request, res: Response) =
   res.json({ success: true, data: payments });
 };
 
-// GET /autopool/pending-links
+// GET /autopool/pending-links — no change needed, already correct
 export const getMyAutopoolPendingLinks = async (req: Request, res: Response) => {
   const userId = req.userId;
 
@@ -93,13 +92,13 @@ export const getMyAutopoolPendingLinks = async (req: Request, res: Response) => 
   const links = await prisma.autopoolPendingLink.findMany({
     where: {
       OR: [
-        { account: { userId } },
-        { userId },
+        { account: { position: { userId } } },
+        { position: { userId } },
       ],
       isCompleted: false,
     },
     include: {
-      account: { select: { level: true, accountType: true } },
+      account: { select: { level: true, accountType: true, positionId: true } },
     },
     orderBy: { createdAt: "desc" },
   });
@@ -122,9 +121,10 @@ export const joinAutopoolHandler = async (req: Request, res: Response) => {
 
   const entryLink = await prisma.autopoolPendingLink.findUniqueOrThrow({
     where: { id: pendingLinkId },
+    include: { position: { select: { userId: true } } },
   });
 
-  if (entryLink.userId !== userId) {
+  if (!entryLink.position || entryLink.position.userId !== userId) {
     throw new AutopoolError("This entry link does not belong to you", "UNAUTHORIZED", 403);
   }
   if (entryLink.linkType !== "ENTRY") {
@@ -135,14 +135,14 @@ export const joinAutopoolHandler = async (req: Request, res: Response) => {
   }
 
   const existing = await prisma.autopoolAccount.findFirst({
-    where: { userId, level: 1, accountType: "ORIGINAL" },
+    where: { positionId: entryLink.positionId!, level: 1, accountType: "ORIGINAL" },
   });
 
   if (existing) {
-    throw new AutopoolError("You already have a Level 1 autopool account", "ALREADY_JOINED", 400);
+    throw new AutopoolError("This position already has a Level 1 autopool account", "ALREADY_JOINED", 400);
   }
 
-  const result = await joinAutopool(userId, pendingLinkId);
+  const result = await joinAutopool(entryLink.positionId!, pendingLinkId);
   res.status(201).json({ success: true, data: result });
 };
 
@@ -158,16 +158,16 @@ export const submitPaymentHandler = async (req: Request, res: Response) => {
   }
 
   if (!screenshotUrl) {
-    if (screenshotUrl) await deleteUploadedFile(screenshotUrl);
     throw new AutopoolError("Payment screenshot is required", "MISSING_SCREENSHOT", 400);
   }
 
-  // SECURITY: verify senderAccount belongs to this user — prevents spoofing
+  // Verify senderAccount belongs to this user via position
   const senderAccount = await prisma.autopoolAccount.findUnique({
     where: { id: senderAccountId },
-    select: { userId: true },
+    select: { position: { select: { userId: true } } },
   });
-  if (!senderAccount || senderAccount.userId !== userId) {
+
+  if (!senderAccount || senderAccount.position.userId !== userId) {
     if (screenshotUrl) await deleteUploadedFile(screenshotUrl);
     throw new AutopoolError("This account does not belong to you", "UNAUTHORIZED", 403);
   }
