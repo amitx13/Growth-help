@@ -91,14 +91,14 @@ export const createUser = async (req: Request, res: Response) => {
       const pinStatus = await prisma.pin.findFirst({
         where: {
           pinCode: validatedData.activationPin,
-          currentOwner: sponsorUserId,
+          // currentOwner: sponsorUserId,
         }
       });
 
       if (!pinStatus) {
         return res.status(400).json({
           success: false,
-          error: 'Invalid PIN or PIN does not belong to sponsor',
+          error: 'Incorrect PIN',
           statusCode: 400,
         } as ApiErrorResponse);
       }
@@ -238,14 +238,14 @@ export const addNewUser = async (req: Request, res: Response) => {
       const pinStatus = await prisma.pin.findFirst({
         where: {
           pinCode: validatedData.activationPin,
-          currentOwner: sponsorUserId,
+          // currentOwner: sponsorUserId,
         }
       });
 
       if (!pinStatus) {
         return res.status(400).json({
           success: false,
-          error: 'Invalid PIN or PIN does not belong to sponsor',
+          error: 'Incorrect PIN',
           statusCode: 400,
         } as ApiErrorResponse);
       }
