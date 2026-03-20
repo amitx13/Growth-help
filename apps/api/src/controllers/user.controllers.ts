@@ -558,7 +558,7 @@ export const generatePaymentDetailsFromPendingLink = async (req: Request, res: R
         },
         select: {
           sponsorPaid: true,
-          levelNumber:true
+          levelNumber: true
         }
       })
 
@@ -571,16 +571,11 @@ export const generatePaymentDetailsFromPendingLink = async (req: Request, res: R
         return res.status(400).json(errorResponse);
       }
 
-      const admin = await getAdminSystemIds()
-
-      const uplinePositionId = await getUplinePositionIdForPayment(currentPosition.placedUnderPositionId, link.targetLevel, admin.accountId);
-
       const payAmt = link.amount
 
       const existingPayment = await prisma.payment.findFirst({
         where: {
           senderPositionId: currentPosition.id,
-          receiverPositionId: uplinePositionId,
           amount: payAmt,
           upgradeToLevel: link.targetLevel,
           paymentToLevel: link.targetLevel,
@@ -659,6 +654,9 @@ export const generatePaymentDetailsFromPendingLink = async (req: Request, res: R
         return res.status(200).json(Response);
       }
 
+      const admin = await getAdminSystemIds()
+
+      const uplinePositionId = await getUplinePositionIdForPayment(currentPosition.placedUnderPositionId, link.targetLevel, admin.accountId);
 
       const PaymentDetails = await prisma.$transaction(async (tx) => {
         const payment = await tx.payment.create({

@@ -71,7 +71,7 @@ export const getIncomingAutopoolPayments = async (req: Request, res: Response) =
           level: true,
           accountType: true,
           positionId: true,
-          position: { select: { user: { select: {id:true, name: true, mobile: true } } } },
+          position: { select: { user: { select: { id: true, name: true, mobile: true } } } },
         },
       },
     },
@@ -133,6 +133,24 @@ export const joinAutopoolHandler = async (req: Request, res: Response) => {
   if (entryLink.isCompleted) {
     throw new AutopoolError("This entry link has already been used", "LINK_EXHAUSTED", 400);
   }
+
+  if (entryLink.positionId) {
+    const isLevelupgraded = await prisma.pendingLink.findFirst({
+      where: {
+        positionId: entryLink.positionId,
+        linkType: "UPGRADE",
+        targetLevel: 2,
+        amount: 700,
+      },
+      select: {
+        isCompleted: true
+      }
+    })
+    if (isLevelupgraded?.isCompleted === false) {
+      throw new AutopoolError("Unable to join Autopool since Level 2 Upgrade is pending", "Error", 400);
+    }
+  }
+
 
   const existing = await prisma.autopoolAccount.findFirst({
     where: { positionId: entryLink.positionId!, level: 1, accountType: "ORIGINAL" },
